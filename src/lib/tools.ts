@@ -292,7 +292,7 @@ export const tools: Tool[] = [
       const parts = input.trim().split(".");
       if (parts.length < 2) throw new Error("A JWT needs at least a header and a payload.");
       const dec = (p: string) => JSON.parse(b64decode(p.replace(/-/g, "+").replace(/_/g, "/")));
-      return JSON.stringify({ header: dec(parts[0]), payload: dec(parts[1]) }, null, 2);
+      return JSON.stringify({ header: dec(parts[0]!), payload: dec(parts[1]!) }, null, 2);
     },
     faq: [
       {
@@ -336,14 +336,14 @@ export const tools: Tool[] = [
         return Array.from({ length: 5 }, () => {
           const words = Array.from(
             { length: 3 },
-            () => LOREM[randomBytes(1)[0] % LOREM.length],
+            () => LOREM[randomBytes(1)[0]! % LOREM.length]!,
           );
-          return `${words.join("-")}-${randomBytes(1)[0]}`;
+          return `${words.join("-")}-${randomBytes(1)[0]!}`;
         }).join("\n");
       }
       const alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$%^&*-_";
       return Array.from({ length: 5 }, () =>
-        [...randomBytes(20)].map((b) => alphabet[b % alphabet.length]).join(""),
+        [...randomBytes(20)].map((b) => alphabet[b % alphabet.length]!).join(""),
       ).join("\n");
     },
     faq: [
@@ -366,10 +366,10 @@ export const tools: Tool[] = [
     ],
     run: (_i, action) => {
       const sentence = () => {
-        const n = 8 + (randomBytes(1)[0] % 8);
-        const words = Array.from({ length: n }, () => LOREM[randomBytes(1)[0] % LOREM.length]);
+        const n = 8 + (randomBytes(1)[0]! % 8);
+        const words = Array.from({ length: n }, () => LOREM[randomBytes(1)[0]! % LOREM.length]!);
         const s = words.join(" ");
-        return s[0].toUpperCase() + s.slice(1) + ".";
+        return s[0]!.toUpperCase() + s.slice(1) + ".";
       };
       if (action === "list") return Array.from({ length: 6 }, () => `- ${sentence()}`).join("\n");
       return Array.from({ length: 3 }, () =>
@@ -411,9 +411,9 @@ export const tools: Tool[] = [
         case "constant":
           return words.join("_").toUpperCase();
         case "title":
-          return words.map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+          return words.map((w) => w[0]!.toUpperCase() + w.slice(1)).join(" ");
         default:
-          return words.map((w, i) => (i ? w[0].toUpperCase() + w.slice(1) : w)).join("");
+          return words.map((w, i) => (i ? w[0]!.toUpperCase() + w.slice(1) : w)).join("");
       }
     },
     faq: [
@@ -446,7 +446,7 @@ export const tools: Tool[] = [
       ].join("\n");
     },
     faq: [
-      { q: "How is reading time计算?", a: "At roughly 220 words per minute, rounded up to a whole minute." },
+      { q: "How is reading time calculated?", a: "At roughly 220 words per minute, rounded up to a whole minute." },
       { q: "Does it count markdown syntax?", a: "Yes — characters are counted literally." },
     ],
   },
@@ -604,7 +604,7 @@ export const tools: Tool[] = [
           .replace(/&#39;/g, "'")
           .replace(/&amp;/g, "&");
       }
-      return input.replace(/[&<>"']/g, (c) => map[c]);
+      return input.replace(/[&<>"']/g, (c) => map[c]!);
     },
     faq: [
       { q: "Does it handle every entity?", a: "It covers the five characters that matter for safe HTML output." },
