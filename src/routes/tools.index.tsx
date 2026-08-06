@@ -6,9 +6,9 @@ import { tools, categories, accentClass, type CategoryId } from "@/lib/tools";
 import { ToolCard } from "@/components/site/tool-card";
 import { Icon } from "@/components/site/icon";
 
-type ToolsSearch = { category?: CategoryId; q?: string };
+type ToolsSearch = { category?: CategoryId | undefined; q?: string | undefined };
 
-export const Route = createFileRoute("/tools")({
+export const Route = createFileRoute("/tools/")({
   validateSearch: (search: Record<string, unknown>): ToolsSearch => ({
     category: (search["category"] as CategoryId) || undefined,
     q: (search["q"] as string) || undefined,
