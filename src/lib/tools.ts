@@ -6270,13 +6270,13 @@ export const toolsBySlug = Object.fromEntries(tools.map((t) => [t.slug, t]));
 export const categoryById = Object.fromEntries(categories.map((c) => [c.id, c]));
 
 export const accentClass: Record<Accent, { bg: string; text: string; ring: string; grad: string }> = {
-  brand: { bg: "bg-brand/12", text: "text-brand", ring: "ring-brand/20", grad: "from-brand to-purple" },
-  blue: { bg: "bg-blue/12", text: "text-blue", ring: "ring-blue/20", grad: "from-blue to-teal" },
-  purple: { bg: "bg-purple/12", text: "text-purple", ring: "ring-purple/20", grad: "from-purple to-pink" },
-  pink: { bg: "bg-pink/12", text: "text-pink", ring: "ring-pink/20", grad: "from-pink to-orange" },
-  orange: { bg: "bg-orange/12", text: "text-orange", ring: "ring-orange/20", grad: "from-orange to-yellow" },
-  yellow: { bg: "bg-yellow/18", text: "text-yellow", ring: "ring-yellow/25", grad: "from-yellow to-orange" },
-  green: { bg: "bg-green/12", text: "text-green", ring: "ring-green/20", grad: "from-green to-teal" },
-  teal: { bg: "bg-teal/12", text: "text-teal", ring: "ring-teal/20", grad: "from-teal to-blue" },
-  cyan: { bg: "bg-teal/12", text: "text-teal", ring: "ring-teal/20", grad: "from-teal to-blue" },
+  brand: { bg: "bg-brand/18", text: "text-brand", ring: "ring-brand/20", grad: "from-brand to-purple" },
+  blue: { bg: "bg-blue/18", text: "text-blue", ring: "ring-blue/20", grad: "from-blue to-teal" },
+  purple: { bg: "bg-purple/18", text: "text-purple", ring: "ring-purple/20", grad: "from-purple to-pink" },
+  pink: { bg: "bg-pink/18", text: "text-pink", ring: "ring-pink/20", grad: "from-pink to-orange" },
+  orange: { bg: "bg-orange/18", text: "text-orange", ring: "ring-orange/20", grad: "from-orange to-yellow" },
+  yellow: { bg: "bg-yellow/22", text: "text-yellow", ring: "ring-yellow/25", grad: "from-yellow to-orange" },
+  green: { bg: "bg-green/18", text: "text-green", ring: "ring-green/20", grad: "from-green to-teal" },
+  teal: { bg: "bg-teal/18", text: "text-teal", ring: "ring-teal/20", grad: "from-teal to-blue" },
+  cyan: { bg: "bg-teal/18", text: "text-teal", ring: "ring-teal/20", grad: "from-teal to-blue" },
 };

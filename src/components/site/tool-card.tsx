@@ -3,10 +3,13 @@ import { Heart } from "lucide-react";
 import { motion } from "motion/react";
 import { accentClass, categoryById, type Tool } from "@/lib/tools";
 import { Icon } from "./icon";
+import { useFavoritesContext } from "@/components/favorites-provider";
 
 export function ToolCard({ tool, index = 0 }: { tool: Tool; index?: number }) {
   const a = accentClass[tool.accent];
   const category = categoryById[tool.category];
+  const { isFavorite, toggle } = useFavoritesContext();
+  const fav = isFavorite(tool.slug);
 
   return (
     <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.35, delay: Math.min(index, 6) * 0.04, ease: [0.22, 1, 0.36, 1] }}>
@@ -15,7 +18,21 @@ export function ToolCard({ tool, index = 0 }: { tool: Tool; index?: number }) {
           <span className={`grid size-11 shrink-0 place-items-center rounded-lg ${a.bg} ${a.text} border-2 border-foreground`}>
             <Icon name={tool.icon} className="size-5" />
           </span>
-          <Heart className="size-4 shrink-0 text-muted-foreground/40 transition-colors group-hover:text-pink" />
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggle(tool.slug);
+            }}
+            className="shrink-0 rounded-md p-1 transition-colors hover:bg-pink/10"
+            aria-label={fav ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart
+              className={`size-4 transition-colors ${
+                fav ? "fill-pink text-pink" : "text-muted-foreground/40 group-hover:text-pink"
+              }`}
+            />
+          </button>
         </div>
         <div className="min-w-0">
           <h3 className="truncate text-base font-semibold">{tool.name}</h3>

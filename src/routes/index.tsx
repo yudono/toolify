@@ -146,7 +146,7 @@ function Index() {
                   className="lift flex h-full flex-col gap-3 rounded-lg border-2 border-foreground bg-surface p-5 shadow-soft"
                 >
                   <span
-                    className={`grid size-11 place-items-center rounded-lg ${a.bg} text-white border-2 border-foreground shadow-soft`}
+                    className={`grid size-11 place-items-center rounded-lg ${a.bg} ${a.text} border-2 border-foreground shadow-soft`}
                   >
                     <Icon name={c.icon} className="size-5" />
                   </span>

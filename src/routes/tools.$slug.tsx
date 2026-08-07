@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowRight, Check, ChevronRight, Copy, Download, Trash2, Wand2 } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Copy, Download, Heart, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -11,7 +11,7 @@ import {
 import { accentClass, categoryById, tools, toolsBySlug } from "@/lib/tools";
 import { Icon } from "@/components/site/icon";
 import { ToolCard } from "@/components/site/tool-card";
-import { CodeEditor } from "@/components/site/code-editor";
+import { CodeEditor, detectLanguage, hljs } from "@/components/site/code-editor";
 
 export const Route = createFileRoute("/tools/$slug")({
   loader: ({ params }) => {
@@ -78,6 +78,71 @@ function ToolPage() {
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const inputPreRef = useRef<HTMLPreElement>(null);
+  const outputCodeRef = useRef<HTMLElement>(null);
+  const lastHighlightedText = useRef("");
+
+  const inputLang = detectLanguage(input);
+
+  const highlightInput = useCallback(() => {
+    const el = inputPreRef.current;
+    if (!el) return;
+    if (inputLang === "plaintext") {
+      el.textContent = input;
+      return;
+    }
+    const text = el.textContent || "";
+    if (text !== lastHighlightedText.current) {
+      el.textContent = input;
+      hljs.highlightElement(el);
+      lastHighlightedText.current = input;
+    }
+  }, [input, inputLang]);
+
+  const handleInput = useCallback(() => {
+    const el = inputPreRef.current;
+    if (!el) return;
+    const text = el.textContent || "";
+    setInput(text);
+    if (text !== lastHighlightedText.current && inputLang !== "plaintext") {
+      el.textContent = text;
+      hljs.highlightElement(el);
+      lastHighlightedText.current = text;
+    }
+  }, [inputLang]);
+
+  const handleInputBlur = useCallback(() => {
+    const el = inputPreRef.current;
+    if (!el) return;
+    const raw = el.textContent || "";
+    const formatted = formatInput(raw);
+    if (formatted !== raw) {
+      el.textContent = formatted;
+      if (inputLang !== "plaintext") {
+        hljs.highlightElement(el);
+      }
+      lastHighlightedText.current = formatted;
+    }
+    setInput(formatted);
+  }, [inputLang]);
+
+  useEffect(() => {
+    const el = inputPreRef.current;
+    if (!el) return;
+    if (input === lastHighlightedText.current) return;
+    el.textContent = input;
+    if (inputLang !== "plaintext") {
+      hljs.highlightElement(el);
+    }
+    lastHighlightedText.current = input;
+  }, []);
+
+  useEffect(() => {
+    if (outputCodeRef.current && output) {
+      outputCodeRef.current.removeAttribute("data-highlighted");
+      hljs.highlightElement(outputCodeRef.current);
+    }
+  }, [output, tool.outputLanguage]);
 
   const related = tools
     .filter((t) => t.slug !== tool.slug && t.category === tool.category)
@@ -166,14 +231,17 @@ function ToolPage() {
               )
             }
           >
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onBlur={(e) => setInput(formatInput(e.target.value))}
-              placeholder={tool.placeholder ?? "Paste your content here..."}
+            <pre
+              ref={inputPreRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={handleInput}
+              onBlur={handleInputBlur}
               spellCheck={false}
-              className="h-72 w-full resize-none rounded-lg bg-[#0d1117] p-4 font-mono text-[13px] leading-relaxed text-[#d4d4d4] outline-none"
-            />
+              className="h-72 w-full overflow-auto whitespace-pre-wrap break-words rounded-lg bg-[#0d1117] p-4 font-mono text-[13px] leading-relaxed text-[#d4d4d4] outline-none"
+            >
+              <code className={`hljs language-${inputLang}`}>{input}</code>
+            </pre>
           </Panel>
         )}
 
@@ -209,7 +277,11 @@ function ToolPage() {
             </div>
           ) : output ? (
             <div className="h-72 w-full overflow-auto rounded-lg bg-[#0d1117]">
-              <CodeEditor value={output} language={tool.outputLanguage} height="100%" />
+              <pre className="p-4 m-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed">
+                <code ref={outputCodeRef} className={`hljs language-${tool.outputLanguage ?? "plaintext"}`}>
+                  {output}
+                </code>
+              </pre>
             </div>
           ) : (
             <div className="flex h-72 flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted p-6 text-center">
