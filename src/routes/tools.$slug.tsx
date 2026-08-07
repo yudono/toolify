@@ -275,7 +275,7 @@ function ToolPage() {
         </div>
       </header>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-2">
+      <div className={`mt-8 grid gap-4 ${tool.fileTool ? "" : "lg:grid-cols-2"}`}>
         {tool.fileTool ? (
           <Panel
             title="Image Input"
@@ -298,11 +298,11 @@ function ToolPage() {
               className="hidden"
             />
             {isImageInput ? (
-              <div className="relative h-72 w-full overflow-hidden rounded-lg bg-[#0d1117] p-2">
+              <div className="relative w-full overflow-hidden rounded-lg bg-[#0d1117] p-4" style={{ minHeight: "20rem" }}>
                 <img
                   src={fileDataUrl}
                   alt={fileName}
-                  className="h-full w-full object-contain"
+                  className="mx-auto max-h-96 object-contain"
                 />
                 <div className="absolute bottom-3 left-3 rounded-md bg-black/70 px-2 py-1 text-xs text-white">
                   {fileName}
@@ -311,7 +311,7 @@ function ToolPage() {
             ) : (
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex h-72 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted transition-colors hover:bg-accent/10"
+                className="flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted transition-colors hover:bg-accent/10"
               >
                 <span className="grid size-14 place-items-center rounded-lg bg-brand text-white border-2 border-foreground">
                   <Upload className="size-6" />
@@ -353,7 +353,7 @@ function ToolPage() {
 
         <Panel
           title={tool.outputLabel ?? "Output"}
-          className={tool.generator || tool.fileTool ? "lg:col-span-2" : ""}
+          className={tool.generator ? "lg:col-span-2" : ""}
           action={
             output && (
               <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ function ToolPage() {
           }
         >
           {error ? (
-            <div className="flex h-72 flex-col items-center justify-center rounded-lg bg-destructive/8 p-6 text-center border-2 border-destructive/30">
+            <div className="flex w-full flex-col items-center justify-center rounded-lg bg-destructive/8 p-6 text-center border-2 border-destructive/30" style={{ minHeight: "20rem" }}>
               <span className="grid size-12 place-items-center rounded-lg bg-destructive/12 text-destructive">
                 <Icon name="TriangleAlert" className="size-5" />
               </span>
@@ -383,11 +383,11 @@ function ToolPage() {
             </div>
           ) : output ? (
             isImageOutput ? (
-              <div className="relative h-72 w-full overflow-auto rounded-lg bg-[#0d1117] p-2">
+              <div className="relative w-full overflow-hidden rounded-lg bg-[#0d1117] p-4" style={{ minHeight: "20rem" }}>
                 <img
                   src={output.split("\n\n--- Stats ---")[0]}
                   alt="Processed"
-                  className="mx-auto max-h-64 object-contain"
+                  className="mx-auto max-h-96 object-contain"
                 />
                 {output.includes("--- Stats ---") && (
                   <pre className="mt-2 whitespace-pre-wrap border-t border-white/10 p-2 text-[11px] leading-relaxed text-[#d4d4d4]">
@@ -405,7 +405,7 @@ function ToolPage() {
               </div>
             )
           ) : (
-            <div className="flex h-72 flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted p-6 text-center">
+            <div className="flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted p-6 text-center" style={{ minHeight: "20rem" }}>
               <span className="grid size-12 place-items-center rounded-lg bg-brand text-white border-2 border-foreground">
                 <Wand2 className="size-5" />
               </span>
