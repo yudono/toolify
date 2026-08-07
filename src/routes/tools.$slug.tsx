@@ -12,6 +12,7 @@ import { accentClass, categoryById, tools, toolsBySlug } from "@/lib/tools";
 import { Icon } from "@/components/site/icon";
 import { ToolCard } from "@/components/site/tool-card";
 import { CodeEditor, detectLanguage, hljs } from "@/components/site/code-editor";
+import { useFavoritesContext } from "@/components/favorites-provider";
 
 export const Route = createFileRoute("/tools/$slug")({
   loader: ({ params }) => {
@@ -61,6 +62,8 @@ function ToolPage() {
   const tool = toolsBySlug[slug]!;
   const a = accentClass[tool.accent];
   const category = categoryById[tool.category]!;
+  const { isFavorite, toggle } = useFavoritesContext();
+  const fav = isFavorite(tool.slug);
 
   const formatInput = (raw: string): string => {
     const trimmed = raw.trim();
@@ -207,13 +210,22 @@ function ToolPage() {
             <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
           </div>
         </div>
-        <Link
-          to="/tools"
-          search={{ category: tool.category }}
-          className={`shrink-0 rounded-sm border border-foreground/20 px-3 py-1.5 text-xs font-medium ${a.bg} ${a.text}`}
-        >
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => toggle(tool.slug)}
+            className="rounded-lg border border-foreground/20 p-2 transition-colors hover:bg-pink/10"
+            aria-label={fav ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart className={`size-4 ${fav ? "fill-pink text-pink" : "text-muted-foreground"}`} />
+          </button>
+          <Link
+            to="/tools"
+            search={{ category: tool.category }}
+            className={`rounded-sm border border-foreground/20 px-3 py-1.5 text-xs font-medium ${a.bg} ${a.text}`}
+          >
           {category.name}
         </Link>
+        </div>
       </header>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
