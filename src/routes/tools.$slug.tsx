@@ -200,7 +200,7 @@ function ToolPage() {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="h-72 w-full overflow-hidden rounded-lg"
+              className="h-72 w-full overflow-auto rounded-lg"
             >
               <CodeEditor value={output} height="100%" />
             </motion.div>

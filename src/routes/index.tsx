@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Flame, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Flame, ShieldCheck, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { tools, categories, accentClass } from "@/lib/tools";
 import { ToolCard } from "@/components/site/tool-card";
@@ -25,9 +26,15 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+const INITIAL_COUNT = 12;
+const LOAD_MORE_COUNT = 24;
+
 function Index() {
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
   const trending = tools.filter((t) => t.trending);
-  const recent = tools.filter((t) => t.isNew).concat(tools.slice(-2)).slice(0, 3);
+  const allTools = tools;
+  const visibleTrending = trending.slice(0, visibleCount);
+  const hasMore = visibleCount < tools.length;
 
   return (
     <div className="overflow-x-clip">
@@ -94,6 +101,32 @@ function Index() {
         </div>
       </Section>
 
+      <Section title="All tools" subtitle="Browse every utility — all run locally in your browser.">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {allTools.slice(0, visibleCount).map((tool, i) => (
+            <ToolCard key={tool.slug} tool={tool} index={i} />
+          ))}
+        </div>
+        {hasMore && (
+          <div className="mt-8 flex justify-center">
+            <button
+              onClick={() => setVisibleCount((c) => Math.min(c + LOAD_MORE_COUNT, tools.length))}
+              className="rounded-lg border-2 border-foreground bg-surface px-6 py-3 text-sm font-semibold shadow-soft transition-transform duration-100 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-lift active:translate-x-0 active:translate-y-0 active:shadow-none"
+            >
+              Load more ({Math.min(visibleCount + LOAD_MORE_COUNT, tools.length)} of {tools.length})
+            </button>
+          </div>
+        )}
+        {!hasMore && (
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Showing all {tools.length} tools.{" "}
+            <Link to="/tools" className="font-medium text-brand hover:underline">
+              Browse with filters
+            </Link>
+          </p>
+        )}
+      </Section>
+
       <Section title="Popular categories" subtitle="Jump straight to the kind of work you're doing.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {categories.map((c, i) => {
@@ -128,18 +161,6 @@ function Index() {
               </motion.div>
             );
           })}
-        </div>
-      </Section>
-
-      <Section
-        title="Recently added"
-        subtitle="Fresh utilities, shipped small and often."
-        cta={{ label: "See all tools", to: "/tools" }}
-      >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {recent.map((tool, i) => (
-            <ToolCard key={tool.slug} tool={tool} index={i} />
-          ))}
         </div>
       </Section>
 
