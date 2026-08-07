@@ -953,7 +953,7 @@ export type CategoryId =
   | "javascript"
   | "image";
 
-export type Accent = "brand" | "blue" | "purple" | "pink" | "orange" | "yellow" | "green" | "teal";
+export type Accent = "brand" | "blue" | "purple" | "pink" | "orange" | "yellow" | "green" | "teal" | "cyan";
 
 export type Category = {
   id: CategoryId;
@@ -6216,4 +6216,5 @@ export const accentClass: Record<Accent, { bg: string; text: string; ring: strin
   yellow: { bg: "bg-yellow/18", text: "text-yellow", ring: "ring-yellow/25", grad: "from-yellow to-orange" },
   green: { bg: "bg-green/12", text: "text-green", ring: "ring-green/20", grad: "from-green to-teal" },
   teal: { bg: "bg-teal/12", text: "text-teal", ring: "ring-teal/20", grad: "from-teal to-blue" },
+  cyan: { bg: "bg-teal/12", text: "text-teal", ring: "ring-teal/20", grad: "from-teal to-blue" },
 };
