@@ -47,6 +47,8 @@ hljs.registerLanguage("kotlin", kotlin);
 hljs.registerLanguage("dart", dart);
 hljs.registerLanguage("graphql", graphql);
 
+export { hljs };
+
 const languageMap: Record<string, string> = {
   typescript: "typescript",
   ts: "typescript",
@@ -101,7 +103,7 @@ const languageMap: Record<string, string> = {
   plaintext: "plaintext",
 };
 
-function detectLanguage(code: string): string {
+export function detectLanguage(code: string): string {
   const trimmed = code.trim();
 
   // SVG
@@ -209,7 +211,7 @@ export function CodeEditor({
 
   return (
     <div
-      className={`overflow-auto rounded-lg ${className}`}
+      className={`overflow-auto ${className}`}
       style={{ height, minHeight: height === "100%" ? "100%" : undefined }}
     >
       <pre className="p-4 m-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed">

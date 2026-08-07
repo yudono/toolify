@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowRight, Check, ChevronRight, Copy, Download, Trash2, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import {
 import { accentClass, categoryById, tools, toolsBySlug } from "@/lib/tools";
 import { Icon } from "@/components/site/icon";
 import { ToolCard } from "@/components/site/tool-card";
-import { CodeEditor } from "@/components/site/code-editor";
+import { CodeEditor, detectLanguage, hljs } from "@/components/site/code-editor";
 
 export const Route = createFileRoute("/tools/$slug")({
   loader: ({ params }) => {
@@ -66,6 +66,26 @@ function ToolPage() {
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const inputOverlayRef = useRef<HTMLTextAreaElement>(null);
+  const inputCodeRef = useRef<HTMLElement>(null);
+
+  const syncScroll = useCallback(() => {
+    const textarea = inputOverlayRef.current;
+    if (!textarea) return;
+    const highlight = textarea.previousElementSibling as HTMLElement | null;
+    if (highlight) {
+      highlight.scrollTop = textarea.scrollTop;
+      highlight.scrollLeft = textarea.scrollLeft;
+    }
+  }, []);
+
+  const inputLang = detectLanguage(input);
+  useEffect(() => {
+    if (inputCodeRef.current && inputLang !== "plaintext") {
+      inputCodeRef.current.removeAttribute("data-highlighted");
+      hljs.highlightElement(inputCodeRef.current);
+    }
+  }, [input, inputLang]);
 
   const related = tools
     .filter((t) => t.slug !== tool.slug && t.category === tool.category)
@@ -154,13 +174,24 @@ function ToolPage() {
               )
             }
           >
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={tool.placeholder ?? "Paste your content here..."}
-              spellCheck={false}
-              className="h-72 w-full resize-none rounded-lg bg-[#0d1117] p-4 font-mono text-[13px] leading-relaxed text-[#d4d4d4] outline-none transition-shadow focus:ring-2 focus:ring-ring/50"
-            />
+            <div className="relative h-72 w-full overflow-auto rounded-lg bg-[#0d1117]">
+              <div className="absolute inset-0 overflow-auto pointer-events-none">
+                <pre className="p-4 m-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed">
+                  <code ref={inputCodeRef} className={`hljs language-${inputLang}`}>
+                    {input}
+                  </code>
+                </pre>
+              </div>
+              <textarea
+                ref={inputOverlayRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onScroll={syncScroll}
+                placeholder={tool.placeholder ?? "Paste your content here..."}
+                spellCheck={false}
+                className="absolute inset-0 h-full w-full resize-none border-0 bg-transparent p-4 font-mono text-[13px] leading-relaxed text-transparent caret-white outline-none rounded-none placeholder:text-muted-foreground/50"
+              />
+            </div>
           </Panel>
         )}
 
@@ -195,7 +226,7 @@ function ToolPage() {
               <p className="mt-4 max-w-sm text-sm font-medium text-destructive">{error}</p>
             </div>
           ) : output ? (
-            <div className="h-72 w-full overflow-auto rounded-lg">
+            <div className="h-72 w-full overflow-auto rounded-lg bg-[#0d1117]">
               <CodeEditor value={output} language={tool.outputLanguage} height="100%" />
             </div>
           ) : (

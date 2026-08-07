@@ -221,3 +221,7 @@
 @utility animate-float {
   animation: float-slow 7s ease-in-out infinite;
 }
+
+pre code.hljs {
+  padding: 0;
+}
