@@ -954,7 +954,7 @@ export type CategoryId =
   | "image"
   | "flutter";
 
-export type Accent = "brand" | "blue" | "purple" | "pink" | "orange" | "yellow" | "green" | "teal" | "cyan";
+export type Accent = "brand" | "blue" | "purple" | "pink" | "orange" | "yellow" | "green" | "teal" | "cyan" | "red";
 
 export type Category = {
   id: CategoryId;
@@ -8781,4 +8781,5 @@ export const accentClass: Record<Accent, { bg: string; text: string; ring: strin
   green: { bg: "bg-green/18", text: "text-green", ring: "ring-green/20", grad: "from-green to-teal" },
   teal: { bg: "bg-teal/18", text: "text-teal", ring: "ring-teal/20", grad: "from-teal to-blue" },
   cyan: { bg: "bg-teal/18", text: "text-teal", ring: "ring-teal/20", grad: "from-teal to-blue" },
+  red: { bg: "bg-red/18", text: "text-red", ring: "ring-red/20", grad: "from-red to-orange" },
 };
