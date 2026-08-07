@@ -225,11 +225,3 @@
 pre code.hljs {
   padding: 0;
 }
-
-textarea {
-  font-variant-ligatures: none;
-  letter-spacing: normal;
-  word-spacing: normal;
-  text-rendering: auto;
-  -webkit-text-size-adjust: 100%;
-}
