@@ -1,7 +1,3 @@
-import { useRef } from "react";
-import Editor, { type OnMount } from "@monaco-editor/react";
-import type { editor } from "monaco-editor";
-
 interface CodeEditorProps {
   value: string;
   language?: string;
@@ -9,40 +5,6 @@ interface CodeEditorProps {
   height?: string;
   className?: string;
 }
-
-const languageMap: Record<string, string> = {
-  typescript: "typescript",
-  javascript: "javascript",
-  json: "json",
-  html: "html",
-  css: "css",
-  xml: "xml",
-  python: "python",
-  sql: "sql",
-  graphql: "graphql",
-  go: "go",
-  rust: "rust",
-  java: "java",
-  kotlin: "kotlin",
-  swift: "swift",
-  dart: "dart",
-  php: "php",
-  ruby: "ruby",
-  c: "c",
-  cpp: "cpp",
-  csharp: "csharp",
-  yaml: "yaml",
-  toml: "toml",
-  markdown: "markdown",
-  bash: "shell",
-  shell: "shell",
-  powershell: "powershell",
-  dockerfile: "dockerfile",
-  ini: "ini",
-  properties: "properties",
-  text: "plaintext",
-  plaintext: "plaintext",
-};
 
 function detectLanguage(code: string): string {
   const trimmed = code.trim();
@@ -56,54 +18,23 @@ function detectLanguage(code: string): string {
   if (/^(public |private |protected |class |interface )/.test(trimmed)) return "java";
   if (/^(curl |fetch |axios)/.test(trimmed)) return "shell";
   if (/^---\n/.test(trimmed)) return "yaml";
-  return "plaintext";
+  return "text";
 }
 
 export function CodeEditor({
   value,
-  language,
   readOnly = true,
   height = "100%",
   className = "",
 }: CodeEditorProps) {
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-
-  const handleMount: OnMount = (editor) => {
-    editorRef.current = editor;
-  };
-
-  const lang = language ?? detectLanguage(value);
-
   return (
-    <div className={`overflow-hidden rounded-lg border-2 border-foreground ${className}`}>
-      <Editor
-        height={height}
-        language={lang}
-        value={value}
-        theme="vs-dark"
-        onMount={handleMount}
-        options={{
-          readOnly,
-          minimap: { enabled: false },
-          fontSize: 13,
-          fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-          lineNumbers: "on",
-          scrollBeyondLastLine: false,
-          wordWrap: "on",
-          padding: { top: 12, bottom: 12 },
-          renderLineHighlight: "none",
-          overviewRulerLanes: 0,
-          hideCursorInOverviewRuler: true,
-          overviewRulerBorder: false,
-          scrollbar: {
-            vertical: "auto",
-            horizontal: "auto",
-            verticalScrollbarSize: 6,
-            horizontalScrollbarSize: 6,
-          },
-          automaticLayout: true,
-        }}
-      />
+    <div
+      className={`overflow-auto rounded-lg bg-[#1e1e1e] text-[#d4d4d4] font-mono text-[13px] leading-relaxed ${className}`}
+      style={{ height, minHeight: height === "100%" ? "100%" : undefined }}
+    >
+      <pre className="p-3 m-0 whitespace-pre-wrap break-words">
+        <code>{value}</code>
+      </pre>
     </div>
   );
 }

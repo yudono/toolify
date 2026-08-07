@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { ArrowRight, Check, ChevronRight, Copy, Download, Trash2, Wand2 } from "lucide-react";
-import { motion } from "motion/react";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -160,7 +159,7 @@ function ToolPage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={tool.placeholder ?? "Paste your content here..."}
               spellCheck={false}
-              className="h-72 w-full resize-none rounded-lg bg-surface-muted p-4 font-mono text-sm leading-relaxed outline-none border-2 border-foreground transition-shadow focus:ring-2 focus:ring-ring/50"
+              className="h-72 w-full resize-none rounded-lg bg-[#1e1e1e] p-4 font-mono text-[13px] leading-relaxed text-[#d4d4d4] outline-none border-2 border-foreground transition-shadow focus:ring-2 focus:ring-ring/50"
             />
           </Panel>
         )}
@@ -196,14 +195,9 @@ function ToolPage() {
               <p className="mt-4 max-w-sm text-sm font-medium text-destructive">{error}</p>
             </div>
           ) : output ? (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              className="h-72 w-full overflow-auto rounded-lg"
-            >
+            <div className="h-72 w-full rounded-lg overflow-hidden">
               <CodeEditor value={output} height="100%" />
-            </motion.div>
+            </div>
           ) : (
             <div className="flex h-72 flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted p-6 text-center">
               <span className="grid size-12 place-items-center rounded-lg bg-brand text-white border-2 border-foreground">
