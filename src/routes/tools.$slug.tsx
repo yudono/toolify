@@ -159,7 +159,7 @@ function ToolPage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={tool.placeholder ?? "Paste your content here..."}
               spellCheck={false}
-              className="h-72 w-full resize-none rounded-lg bg-[#1e1e1e] p-4 font-mono text-[13px] leading-relaxed text-[#d4d4d4] outline-none border-2 border-foreground transition-shadow focus:ring-2 focus:ring-ring/50"
+              className="h-72 w-full resize-none rounded-lg bg-[#0d1117] p-4 font-mono text-[13px] leading-relaxed text-[#d4d4d4] outline-none transition-shadow focus:ring-2 focus:ring-ring/50"
             />
           </Panel>
         )}
@@ -195,7 +195,7 @@ function ToolPage() {
               <p className="mt-4 max-w-sm text-sm font-medium text-destructive">{error}</p>
             </div>
           ) : output ? (
-            <div className="h-72 w-full rounded-lg overflow-hidden">
+            <div className="h-72 w-full overflow-auto rounded-lg">
               <CodeEditor value={output} language={tool.outputLanguage} height="100%" />
             </div>
           ) : (
