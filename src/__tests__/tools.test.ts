@@ -1513,10 +1513,19 @@ describe("edge cases", () => {
       "sha256-generator",
       "sha512-generator",
       "bcrypt-hash",
+      "image-compress",
+      "image-resize",
+      "image-crop",
+      "image-rotate",
+      "image-flip",
+      "image-convert",
+      "image-exif",
+      "image-blur",
     ];
 
     for (const tool of tools) {
       if (!tool.sample) continue;
+      if (asyncSlugs.includes(tool.slug)) continue;
       const firstAction = tool.actions[0]!.id;
 
       try {

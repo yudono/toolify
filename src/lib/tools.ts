@@ -964,6 +964,52 @@ export type Category = {
   icon: string;
 };
 
+// ─── Image tool helpers (browser-only) ────────────────────────────
+export function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = src;
+  });
+}
+
+export function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: string,
+  quality: number
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Canvas to blob failed"))),
+      type,
+      quality
+    );
+  });
+}
+
+export function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error("Failed to read blob"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+export function dataUrlToSize(dataUrl: string): number {
+  const base64 = dataUrl.split(",")[1] || "";
+  return Math.round((base64.length * 3) / 4);
+}
+
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
 export type Tool = {
   slug: string;
   name: string;
@@ -979,6 +1025,8 @@ export type Tool = {
   outputLabel?: string;
   /** hint for syntax highlighting language */
   outputLanguage?: string;
+  /** tool uses a file picker instead of text input */
+  fileTool?: boolean;
   placeholder?: string;
   sample?: string;
   actions: { id: string; label: string }[];
@@ -8302,467 +8350,310 @@ export const ${name}: Component<${name}Props> = (props) => {
   },
   {
     slug: "image-compress",
-    outputLanguage: "html",
+    outputLanguage: "plaintext",
     name: "Image Compressor",
-    description: "Reduce image file size while maintaining quality.",
+    description: "Reduce image file size by adjusting quality and format.",
     category: "image",
     icon: "Minimize2",
     accent: "red",
-    generator: true,
-    outputLabel: "Compression tips",
-    actions: [{ id: "run", label: "Get Tips" }],
-    run: (): string => `Image compression is a client-side operation. Here's how to compress in the browser:
-
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-const img = new Image();
-img.onload = () => {
-  canvas.width = img.width;
-  canvas.height = img.height;
-  ctx.drawImage(img, 0, 0);
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "compressed.jpg";
-    a.click();
-  }, "image/jpeg", 0.7); // 0.7 = 70% quality
-};
-img.src = "your-image.jpg";
-
-// Tips:
-// - JPEG for photos (lossy, small files)
-// - PNG for graphics (lossless, larger)
-// - WebP for best compression (25-35% smaller)
-// - AVIF for modern browsers (50% smaller than JPEG)
-// - Reduce dimensions: 1920px wide is usually enough
-// - Use tools: TinyPNG, Squoosh, or Sharp (Node.js)`,
+    fileTool: true,
+    generator: false,
+    outputLabel: "Compressed image",
+    actions: [
+      { id: "jpg-90", label: "JPG 90%" },
+      { id: "jpg-70", label: "JPG 70%" },
+      { id: "jpg-50", label: "JPG 50%" },
+      { id: "webp", label: "WebP 80%" },
+      { id: "png", label: "PNG" },
+    ],
+    run: async (dataUrl: string, action: string): Promise<string> => {
+      const img = await loadImage(dataUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      const mimeMap: Record<string, [string, number]> = {
+        "jpg-90": ["image/jpeg", 0.9],
+        "jpg-70": ["image/jpeg", 0.7],
+        "jpg-50": ["image/jpeg", 0.5],
+        "webp": ["image/webp", 0.8],
+        "png": ["image/png", 1],
+      };
+      const [mime, quality] = mimeMap[action] ?? ["image/jpeg", 0.7];
+      const blob = await canvasToBlob(canvas, mime, quality);
+      const original = dataUrlToSize(dataUrl);
+      const compressed = blob.size;
+      const pct = Math.round((1 - compressed / original) * 100);
+      return await blobToDataUrl(blob) + `\n\n--- Stats ---\nOriginal: ${formatBytes(original)}\nCompressed: ${formatBytes(compressed)}\nSaved: ${pct}%`;
+    },
     faq: [
-      { q: "What's the best format for photos?", a: "JPEG at 70-80% quality, or WebP/AVIF for 25-50% smaller files with similar quality." },
-      { q: "How do I resize before compressing?", a: "Set canvas.width and canvas.height to your target dimensions before drawImage." },
+      { q: "What quality should I use?", a: "70-80% is the sweet spot for photos — barely noticeable quality loss with significant size reduction." },
+      { q: "WebP vs JPEG?", a: "WebP produces 25-35% smaller files with similar quality, but has slightly less browser support." },
     ],
   },
   {
     slug: "image-resize",
-    outputLanguage: "html",
+    outputLanguage: "plaintext",
     name: "Image Resizer",
-    description: "Resize images to specific dimensions in the browser.",
+    description: "Resize images to specific dimensions.",
     category: "image",
     icon: "Maximize",
     accent: "red",
-    generator: true,
-    outputLabel: "Resize code",
+    fileTool: true,
+    outputLabel: "Resized image",
     sample: "800",
-    actions: [{ id: "run", label: "Generate Code" }],
-    run: (input: string): string => {
-      const width = parseInt(input) || 800;
-      return `// Resize image to ${width}px width (maintain aspect ratio)
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-const img = new Image();
-img.crossOrigin = "anonymous";
-
-img.onload = () => {
-  const ratio = ${width} / img.width;
-  canvas.width = ${width};
-  canvas.height = img.height * ratio;
-  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "resized-${width}.png";
-    a.click();
-  }, "image/png");
-};
-
-img.src = "your-image.jpg";`;
+    placeholder: "Width in pixels (height adjusts proportionally)...",
+    actions: [
+      { id: "1920", label: "1920px" },
+      { id: "1280", label: "1280px" },
+      { id: "800", label: "800px" },
+      { id: "400", label: "400px" },
+      { id: "custom", label: "Custom Width" },
+    ],
+    run: async (dataUrl: string, action: string): Promise<string> => {
+      const img = await loadImage(dataUrl);
+      const targetW = action === "custom" ? parseInt(dataUrl) || 800 : parseInt(action);
+      const ratio = targetW / img.width;
+      const targetH = Math.round(img.height * ratio);
+      const canvas = document.createElement("canvas");
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+      const blob = await canvasToBlob(canvas, "image/png", 1);
+      const result = await blobToDataUrl(blob);
+      const origSize = dataUrlToSize(dataUrl);
+      return result + `\n\n--- Stats ---\nOriginal: ${img.width}×${img.height} (${formatBytes(origSize)})\nResized: ${targetW}×${targetH} (${formatBytes(blob.size)})`;
     },
     faq: [
-      { q: "Does it maintain aspect ratio?", a: "Yes, the ratio is calculated from the original dimensions." },
-      { q: "What if I need exact dimensions?", a: "Set both canvas.width and canvas.height, but the image may be stretched." },
+      { q: "Does it maintain aspect ratio?", a: "Yes, the height is calculated proportionally from the width you specify." },
+      { q: "What if I need exact dimensions?", a: "Use the crop tool after resizing to get exact dimensions." },
     ],
   },
   {
     slug: "image-crop",
-    outputLanguage: "html",
+    outputLanguage: "plaintext",
     name: "Image Cropper",
-    description: "Crop images to a specific region in the browser.",
+    description: "Crop images to a specific region.",
     category: "image",
     icon: "Crop",
     accent: "red",
-    generator: true,
-    outputLabel: "Crop code",
-    actions: [{ id: "run", label: "Generate Code" }],
-    run: (): string => `// Crop image to a specific region
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-const img = new Image();
-
-img.onload = () => {
-  // Crop region: x, y, width, height (in pixels)
-  const cropX = 100;
-  const cropY = 50;
-  const cropWidth = 400;
-  const cropHeight = 300;
-  
-  canvas.width = cropWidth;
-  canvas.height = cropHeight;
-  ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-  
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cropped.png";
-    a.click();
-  }, "image/png");
-};
-
-img.src = "your-image.jpg";
-
-// For interactive cropping, use:
-// - Cropper.js: https://cropperjs.github.io/
-// - react-image-crop: https://github.com/DominicTobias/react-image-crop`,
+    fileTool: true,
+    outputLabel: "Cropped image",
+    placeholder: "x,y,width,height (e.g. 100,50,400,300)...",
+    sample: "0,0,500,500",
+    actions: [{ id: "run", label: "Crop" }],
+    run: async (dataUrl: string, action: string): Promise<string> => {
+      const img = await loadImage(dataUrl);
+      const input = action === "run" ? dataUrl : action;
+      const parts = input.split(",").map(Number);
+      if (parts.length < 4 || parts.some(isNaN)) {
+        return "Invalid crop params. Format: x,y,width,height (e.g. 100,50,400,300)";
+      }
+      const [cx, cy, cw, ch] = parts;
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.min(cw, img.width - cx);
+      canvas.height = Math.min(ch, img.height - cy);
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, cx, cy, canvas.width, canvas.height, 0, 0, canvas.width, canvas.height);
+      const blob = await canvasToBlob(canvas, "image/png", 1);
+      const result = await blobToDataUrl(blob);
+      return result + `\n\n--- Stats ---\nOriginal: ${img.width}×${img.height}\nCropped: ${canvas.width}×${canvas.height} from (${cx}, ${cy})`;
+    },
     faq: [
-      { q: "How do I find crop coordinates?", a: "Use an image editor or a library like Cropper.js for visual selection." },
-      { q: "Can I crop to a circle?", a: "Use ctx.beginPath() + ctx.arc() + ctx.clip() before drawImage for circular crops." },
+      { q: "How do I find crop coordinates?", a: "Use browser dev tools or a design tool to find the pixel coordinates of the region you want." },
+      { q: "Can I crop to a circle?", a: "Not directly. Use an image editor for circular crops." },
     ],
   },
   {
     slug: "image-rotate",
-    outputLanguage: "html",
+    outputLanguage: "plaintext",
     name: "Image Rotator",
-    description: "Rotate images by any angle in the browser.",
+    description: "Rotate images by any angle.",
     category: "image",
     icon: "RotateCw",
     accent: "red",
-    generator: true,
-    outputLabel: "Rotate code",
-    sample: "90",
-    actions: [{ id: "run", label: "Generate Code" }],
-    run: (input: string): string => {
-      const angle = parseInt(input) || 90;
-      return `// Rotate image by ${angle} degrees
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-const img = new Image();
-
-img.onload = () => {
-  const rad = ${angle} * Math.PI / 180;
-  const sin = Math.abs(Math.sin(rad));
-  const cos = Math.abs(Math.cos(rad));
-  
-  canvas.width = img.width * cos + img.height * sin;
-  canvas.height = img.width * sin + img.height * cos;
-  
-  ctx.translate(canvas.width / 2, canvas.height / 2);
-  ctx.rotate(rad);
-  ctx.drawImage(img, -img.width / 2, -img.height / 2);
-  
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "rotated-${angle}.png";
-    a.click();
-  }, "image/png");
-};
-
-img.src = "your-image.jpg";`;
+    fileTool: true,
+    outputLabel: "Rotated image",
+    actions: [
+      { id: "90", label: "90° CW" },
+      { id: "-90", label: "90° CCW" },
+      { id: "180", label: "180°" },
+      { id: "flip", label: "Flip H" },
+    ],
+    run: async (dataUrl: string, action: string): Promise<string> => {
+      const img = await loadImage(dataUrl);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d")!;
+      if (action === "flip") {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.translate(img.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, 0, 0);
+      } else {
+        const deg = parseInt(action);
+        const rad = (deg * Math.PI) / 180;
+        const sin = Math.abs(Math.sin(rad));
+        const cos = Math.abs(Math.cos(rad));
+        canvas.width = Math.ceil(img.width * cos + img.height * sin);
+        canvas.height = Math.ceil(img.width * sin + img.height * cos);
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(rad);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      }
+      const blob = await canvasToBlob(canvas, "image/png", 1);
+      const result = await blobToDataUrl(blob);
+      return result + `\n\n--- Stats ---\nOriginal: ${img.width}×${img.height}\nResult: ${canvas.width}×${canvas.height}`;
     },
     faq: [
-      { q: "Why does the canvas size change?", a: "Rotation may increase dimensions to fit the rotated image without clipping." },
-      { q: "How do I rotate 90 degrees efficiently?", a: "For exact 90/180/270, use ctx.translate + ctx.rotate + ctx.drawImage with swapped dimensions." },
+      { q: "Why does the canvas size change?", a: "Rotation may increase dimensions to fit the rotated image without clipping corners." },
+      { q: "How do I rotate by a custom angle?", a: "Enter the angle in the input field (e.g. 45) before clicking the button." },
     ],
   },
   {
     slug: "image-flip",
-    outputLanguage: "html",
+    outputLanguage: "plaintext",
     name: "Image Flipper",
     description: "Flip images horizontally or vertically.",
     category: "image",
     icon: "FlipHorizontal",
     accent: "red",
-    generator: true,
-    outputLabel: "Flip code",
-    actions: [{ id: "horizontal", label: "Horizontal" }, { id: "vertical", label: "Vertical" }],
-    run: (_input: string, action: string): string => {
-      if (action === "vertical") {
-        return `// Flip image vertically
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-const img = new Image();
-
-img.onload = () => {
-  canvas.width = img.width;
-  canvas.height = img.height;
-  ctx.translate(0, canvas.height);
-  ctx.scale(1, -1);
-  ctx.drawImage(img, 0, 0);
-  
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "flipped-vertical.png";
-    a.click();
-  }, "image/png");
-};
-
-img.src = "your-image.jpg";`;
+    fileTool: true,
+    outputLabel: "Flipped image",
+    actions: [
+      { id: "horizontal", label: "Horizontal" },
+      { id: "vertical", label: "Vertical" },
+      { id: "both", label: "Both" },
+    ],
+    run: async (dataUrl: string, action: string): Promise<string> => {
+      const img = await loadImage(dataUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      if (action === "horizontal" || action === "both") {
+        ctx.translate(img.width, 0);
+        ctx.scale(-1, 1);
       }
-      return `// Flip image horizontally
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-const img = new Image();
-
-img.onload = () => {
-  canvas.width = img.width;
-  canvas.height = img.height;
-  ctx.translate(canvas.width, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(img, 0, 0);
-  
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "flipped-horizontal.png";
-    a.click();
-  }, "image/png");
-};
-
-img.src = "your-image.jpg";`;
+      if (action === "vertical" || action === "both") {
+        ctx.translate(action === "both" ? img.width : 0, img.height);
+        ctx.scale(action === "both" ? -1 : 1, -1);
+      }
+      ctx.drawImage(img, 0, 0);
+      const blob = await canvasToBlob(canvas, "image/png", 1);
+      const result = await blobToDataUrl(blob);
+      return result + `\n\n--- Stats ---\nOriginal: ${img.width}×${img.height}\nFlipped: ${action}`;
     },
     faq: [
-      { q: "How does flipping work?", a: "ctx.scale(-1, 1) flips horizontally. ctx.scale(1, -1) flips vertically." },
-      { q: "Can I combine flip and rotate?", a: "Yes, apply multiple ctx.rotate() and ctx.scale() transforms before drawImage." },
+      { q: "How does flipping work?", a: "Horizontal flip mirrors left-right. Vertical flip mirrors top-bottom." },
+      { q: "Can I combine flip and rotate?", a: "Yes, flip first then use the rotate tool, or vice versa." },
     ],
   },
   {
     slug: "image-convert",
-    outputLanguage: "html",
+    outputLanguage: "plaintext",
     name: "Image Format Converter",
-    description: "Convert between PNG, JPG, WebP, and AVIF in the browser.",
+    description: "Convert between PNG, JPG, WebP, and AVIF.",
     category: "image",
     icon: "RefreshCw",
     accent: "red",
-    generator: true,
-    outputLabel: "Convert code",
+    fileTool: true,
+    outputLabel: "Converted image",
     actions: [
-      { id: "to-jpg", label: "→ JPG" },
-      { id: "to-png", label: "→ PNG" },
-      { id: "to-webp", label: "→ WebP" },
-      { id: "to-avif", label: "→ AVIF" },
+      { id: "jpg", label: "→ JPG" },
+      { id: "png", label: "→ PNG" },
+      { id: "webp", label: "→ WebP" },
     ],
-    run: (_input: string, action: string): string => {
-      const formats: Record<string, { mime: string; ext: string; q: string }> = {
-        "to-jpg": { mime: "image/jpeg", ext: "jpg", q: "0.9" },
-        "to-png": { mime: "image/png", ext: "png", q: "1.0" },
-        "to-webp": { mime: "image/webp", ext: "webp", q: "0.85" },
-        "to-avif": { mime: "image/avif", ext: "avif", q: "0.8" },
-      };
-      const cfg = formats[action] || formats["to-jpg"];
-      return `// Convert image to ${cfg.ext.toUpperCase()}
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-const img = new Image();
-
-img.onload = () => {
-  canvas.width = img.width;
-  canvas.height = img.height;
-  ctx.drawImage(img, 0, 0);
-  
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "converted.${cfg.ext}";
-    a.click();
-  }, "${cfg.mime}", ${cfg.q});
-};
-
-img.src = "your-image.jpg";
-
-// Supported formats:
-// - image/jpeg (JPG) - best for photos
-// - image/png (PNG) - best for transparency
-// - image/webp (WebP) - 25-35% smaller
-// - image/avif (AVIF) - 50% smaller, modern browsers`;
+    run: async (dataUrl: string, action: string): Promise<string> => {
+      const img = await loadImage(dataUrl);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      if (action === "jpg") {
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      ctx.drawImage(img, 0, 0);
+      const mimeMap: Record<string, string> = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" };
+      const blob = await canvasToBlob(canvas, mimeMap[action] ?? "image/jpeg", action === "png" ? 1 : 0.9);
+      const result = await blobToDataUrl(blob);
+      const origSize = dataUrlToSize(dataUrl);
+      return result + `\n\n--- Stats ---\nOriginal: ${formatBytes(origSize)} (${dataUrl.split(";")[0].split(":")[1] || "unknown"})\nConverted: ${formatBytes(blob.size)} (${action})`;
     },
     faq: [
-      { q: "Which format is smallest?", a: "AVIF is smallest, followed by WebP. Both are significantly smaller than JPEG/PNG." },
-      { q: "Does canvas.toBlob support all formats?", a: "WebP and AVIF support varies by browser. Check canUseWebP() or canUseAVIF() first." },
-    ],
-  },
-  {
-    slug: "svg-sprite-generator",
-    outputLanguage: "html",
-    name: "SVG Sprite Generator",
-    description: "Generate an SVG sprite sheet from multiple SVG icons.",
-    category: "image",
-    icon: "Layers",
-    accent: "red",
-    inputLabel: "SVG code",
-    outputLabel: "SVG Sprite",
-    placeholder: "Paste SVG code to include...",
-    sample: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>',
-    actions: [{ id: "run", label: "Generate Sprite" }],
-    run: (input: string): string => {
-      const svgContent = input.trim() || '<rect width="24" height="24" fill="currentColor"/>';
-      return `<!-- SVG Sprite Sheet -->
-<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
-  <symbol id="icon-1" viewBox="0 0 24 24">
-    ${svgContent.replace(/<svg[^>]*>/, "").replace("</svg>", "")}
-  </symbol>
-</svg>
-
-<!-- Usage -->
-<svg width="24" height="24" aria-hidden="true">
-  <use href="#icon-1"></use>
-</svg>
-
-<!-- JavaScript to build sprite from multiple SVGs -->
-<script>
-const svgs = document.querySelectorAll('.icon-svg');
-let sprite = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none">';
-svgs.forEach((svg, i) => {
-  const viewBox = svg.getAttribute('viewBox') || '0 0 24 24';
-  const inner = svg.innerHTML;
-  sprite += '<symbol id="icon-' + i + '" viewBox="' + viewBox + '">' + inner + '</symbol>';
-  svg.style.display = 'none';
-});
-sprite += '</svg>';
-document.body.insertAdjacentHTML('afterbegin', sprite);
-</script>`;
-    },
-    faq: [
-      { q: "Why use SVG sprites?", a: "Sprites reduce HTTP requests and allow CSS styling of icons via currentColor." },
-      { q: "How do I change icon color?", a: "Set color on the parent <svg> element; icons using currentColor will inherit it." },
+      { q: "Which format is smallest?", a: "WebP is usually smallest, followed by JPEG. PNG is lossless but larger." },
+      { q: "JPG loses transparency?", a: "Yes, JPEG doesn't support transparency. The tool fills transparent areas with white." },
     ],
   },
   {
     slug: "image-exif",
-    outputLanguage: "json",
+    outputLanguage: "plaintext",
     name: "EXIF Metadata Viewer",
-    description: "Extract EXIF metadata from images in the browser.",
+    description: "View image dimensions, file size, and basic metadata.",
     category: "image",
     icon: "Info",
     accent: "red",
-    generator: true,
-    outputLabel: "EXIF data",
-    actions: [{ id: "run", label: "View EXIF" }],
-    run: (): string => `// Extract EXIF metadata from an image
-async function readExif(file) {
-  const buffer = await file.arrayBuffer();
-  const view = new DataView(buffer);
-  
-  // Check for JPEG header
-  if (view.getUint16(0) !== 0xFFD8) {
-    return "Not a JPEG file";
-  }
-  
-  let offset = 2;
-  const exif = {};
-  
-  while (offset < buffer.byteLength) {
-    const marker = view.getUint16(offset);
-    const length = view.getUint16(offset + 2);
-    
-    if (marker === 0xFFE1) { // EXIF marker
-      const exifData = new Uint8Array(buffer, offset + 4, length - 2);
-      // Parse EXIF fields...
-      exif.raw = Array.from(exifData.slice(0, 20)).map(b => b.toString(16)).join(' ');
-    }
-    
-    offset += 2 + length;
-  }
-  
-  // For full EXIF parsing, use exif-js library:
-  // <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
-  // EXIF.getData(imageElement, function() {
-  //   const data = EXIF.getAllTags(this);
-  //   console.log(data);
-  // });
-  
-  return exif;
-}
-
-// Usage with file input
-document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  const exif = await readExif(file);
-  console.log(exif);
-});`,
+    fileTool: true,
+    outputLabel: "Metadata",
+    actions: [{ id: "run", label: "View Metadata" }],
+    run: async (dataUrl: string): Promise<string> => {
+      const img = await loadImage(dataUrl);
+      const byteString = atob(dataUrl.split(",")[1] || "");
+      const mimeType = dataUrl.split(";")[0].split(":")[1] || "unknown";
+      const parts: string[] = [
+        `File Type: ${mimeType}`,
+        `Dimensions: ${img.width} × ${img.height} px`,
+        `Aspect Ratio: ${(img.width / img.height).toFixed(2)}`,
+        `Data URL Size: ${formatBytes(dataUrl.length)}`,
+        `Base64 Size: ${formatBytes(byteString.length)}`,
+        ``,
+        `Note: For full EXIF data (camera model, GPS, date, etc.),`,
+        `use a dedicated EXIF library like exif-js.`,
+      ];
+      return parts.join("\n");
+    },
     faq: [
-      { q: "What EXIF data is available?", a: "Camera model, date taken, GPS coordinates, ISO, shutter speed, aperture, and more." },
-      { q: "Does it work with PNG?", a: "PNG uses tEXt chunks, not EXIF. Use a PNG metadata library for PNG files." },
+      { q: "Why can't I see camera info?", a: "Canvas-based reading strips EXIF. For camera model, GPS, and date, use a library like exif-js or piexif." },
+      { q: "Does it work with PNG?", a: "Dimensions and file size work for all formats. EXIF data is primarily a JPEG feature." },
     ],
   },
   {
     slug: "image-blur",
-    outputLanguage: "html",
+    outputLanguage: "plaintext",
     name: "Image Blur",
-    description: "Apply blur effects to images using CSS or canvas.",
+    description: "Apply blur effects to images.",
     category: "image",
     icon: "EyeOff",
     accent: "red",
-    generator: true,
-    outputLabel: "Blur code",
+    fileTool: true,
+    outputLabel: "Blurred image",
     sample: "5",
-    actions: [{ id: "css", label: "CSS Blur" }, { id: "canvas", label: "Canvas Blur" }],
-    run: (input: string, action: string): string => {
-      const amount = parseInt(input) || 5;
-      if (action === "canvas") {
-        return `// Apply blur using canvas
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-const img = new Image();
-
-img.onload = () => {
-  canvas.width = img.width;
-  canvas.height = img.height;
-  
-  // Draw original
-  ctx.drawImage(img, 0, 0);
-  
-  // Apply blur using multiple passes
-  ctx.filter = "blur(${amount}px)";
-  ctx.drawImage(canvas, 0, 0);
-  
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "blurred-${amount}.png";
-    a.click();
-  }, "image/png");
-};
-
-img.src = "your-image.jpg";`;
-      }
-      return `/* CSS Blur - simple and performant */
-.blur-${amount}px {
-  filter: blur(${amount}px);
-}
-
-/* Gradient blur (sharp center, blurred edges) */
-.blur-vignette {
-  mask-image: radial-gradient(circle, black 40%, transparent 100%);
-  -webkit-mask-image: radial-gradient(circle, black 40%, transparent 100%);
-}
-
-/* Progressive blur (increases toward edges) */
-.blur-progressive {
-  filter: blur(${Math.floor(amount / 2)}px);
-  mask-image: linear-gradient(white, rgba(255,255,255,0.5));
-}`;
+    placeholder: "Blur amount (1-20)...",
+    actions: [
+      { id: "3", label: "Light (3px)" },
+      { id: "5", label: "Medium (5px)" },
+      { id: "10", label: "Heavy (10px)" },
+      { id: "20", label: "Extreme (20px)" },
+    ],
+    run: async (dataUrl: string, action: string): Promise<string> => {
+      const img = await loadImage(dataUrl);
+      const blurAmount = parseInt(action) || 5;
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.filter = `blur(${blurAmount}px)`;
+      ctx.drawImage(img, 0, 0);
+      const blob = await canvasToBlob(canvas, "image/png", 1);
+      const result = await blobToDataUrl(blob);
+      return result + `\n\n--- Stats ---\nOriginal: ${img.width}×${img.height}\nBlur: ${blurAmount}px`;
     },
     faq: [
-      { q: "CSS blur vs canvas blur?", a: "CSS blur is real-time and doesn't modify the image. Canvas blur is destructive and exports a new image." },
-      { q: "How do I blur only part of an image?", a: "Use CSS mask-image or canvas clipping to apply blur selectively." },
+      { q: "Can I blur only part of the image?", a: "Not with this tool. Use CSS mask-image or a photo editor for selective blur." },
+      { q: "CSS blur vs canvas blur?", a: "CSS blur is real-time (non-destructive). Canvas blur exports a new blurred image." },
     ],
   },
 

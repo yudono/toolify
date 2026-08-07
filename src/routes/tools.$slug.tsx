@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowRight, Check, ChevronRight, Copy, Download, Heart, Trash2, Wand2 } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Copy, Download, Heart, Trash2, Upload, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Accordion,
@@ -81,6 +81,9 @@ function ToolPage() {
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [fileDataUrl, setFileDataUrl] = useState("");
+  const [fileName, setFileName] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const inputPreRef = useRef<HTMLPreElement>(null);
   const outputCodeRef = useRef<HTMLElement>(null);
   const lastHighlightedText = useRef("");
@@ -154,7 +157,12 @@ function ToolPage() {
 
   const runAction = async (action: string) => {
     try {
-      const result = tool.run(input, action);
+      const inputVal = tool.fileTool ? fileDataUrl : input;
+      if (tool.fileTool && !fileDataUrl) {
+        setError("Please select an image first.");
+        return;
+      }
+      const result = tool.run(inputVal, action);
       const output = result instanceof Promise ? await result : result;
       setOutput(output);
       setError("");
@@ -164,6 +172,41 @@ function ToolPage() {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      setFileDataUrl(reader.result as string);
+      setOutput("");
+      setError("");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const downloadOutput = () => {
+    if (!output) return;
+    if (output.startsWith("data:image")) {
+      const link = document.createElement("a");
+      link.href = output;
+      link.download = `processed-${fileName || "image.png"}`;
+      link.click();
+    } else {
+      const blob = new Blob([output], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${tool.slug}.txt`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+    toast.success("Downloaded");
+  };
+
+  const isImageOutput = output.startsWith("data:image");
+  const isImageInput = fileDataUrl.startsWith("data:image");
+
   const copy = async () => {
     await navigator.clipboard.writeText(output);
     setCopied(true);
@@ -172,6 +215,10 @@ function ToolPage() {
   };
 
   const download = () => {
+    if (isImageOutput) {
+      downloadOutput();
+      return;
+    }
     const blob = new Blob([output], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -229,7 +276,54 @@ function ToolPage() {
       </header>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-2">
-        {!tool.generator && (
+        {tool.fileTool ? (
+          <Panel
+            title="Image Input"
+            action={
+              fileDataUrl && (
+                <button
+                  onClick={() => { setFileDataUrl(""); setFileName(""); setOutput(""); setError(""); }}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                >
+                  <Trash2 className="size-3.5" /> Clear
+                </button>
+              )
+            }
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            {isImageInput ? (
+              <div className="relative h-72 w-full overflow-hidden rounded-lg bg-[#0d1117] p-2">
+                <img
+                  src={fileDataUrl}
+                  alt={fileName}
+                  className="h-full w-full object-contain"
+                />
+                <div className="absolute bottom-3 left-3 rounded-md bg-black/70 px-2 py-1 text-xs text-white">
+                  {fileName}
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-72 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted transition-colors hover:bg-accent/10"
+              >
+                <span className="grid size-14 place-items-center rounded-lg bg-brand text-white border-2 border-foreground">
+                  <Upload className="size-6" />
+                </span>
+                <p className="mt-4 text-sm font-medium">Click to select an image</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  JPG, PNG, WebP — processed entirely in your browser
+                </p>
+              </button>
+            )}
+          </Panel>
+        ) : (
           <Panel
             title={tool.inputLabel ?? "Input"}
             action={
@@ -259,7 +353,7 @@ function ToolPage() {
 
         <Panel
           title={tool.outputLabel ?? "Output"}
-          className={tool.generator ? "lg:col-span-2" : ""}
+          className={tool.generator || tool.fileTool ? "lg:col-span-2" : ""}
           action={
             output && (
               <div className="flex items-center gap-2">
@@ -288,13 +382,28 @@ function ToolPage() {
               <p className="mt-4 max-w-sm text-sm font-medium text-destructive">{error}</p>
             </div>
           ) : output ? (
-            <div className="h-72 w-full overflow-auto rounded-lg bg-[#0d1117]">
-              <pre className="p-4 m-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed">
-                <code ref={outputCodeRef} className={`hljs language-${tool.outputLanguage ?? "plaintext"}`}>
-                  {output}
-                </code>
-              </pre>
-            </div>
+            isImageOutput ? (
+              <div className="relative h-72 w-full overflow-auto rounded-lg bg-[#0d1117] p-2">
+                <img
+                  src={output.split("\n\n--- Stats ---")[0]}
+                  alt="Processed"
+                  className="mx-auto max-h-64 object-contain"
+                />
+                {output.includes("--- Stats ---") && (
+                  <pre className="mt-2 whitespace-pre-wrap border-t border-white/10 p-2 text-[11px] leading-relaxed text-[#d4d4d4]">
+                    {output.split("--- Stats ---")[1]?.trim()}
+                  </pre>
+                )}
+              </div>
+            ) : (
+              <div className="h-72 w-full overflow-auto rounded-lg bg-[#0d1117]">
+                <pre className="p-4 m-0 whitespace-pre-wrap break-words text-[13px] leading-relaxed">
+                  <code ref={outputCodeRef} className={`hljs language-${tool.outputLanguage ?? "plaintext"}`}>
+                    {output}
+                  </code>
+                </pre>
+              </div>
+            )
           ) : (
             <div className="flex h-72 flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted p-6 text-center">
               <span className="grid size-12 place-items-center rounded-lg bg-brand text-white border-2 border-foreground">
