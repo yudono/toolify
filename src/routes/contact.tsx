@@ -29,7 +29,7 @@ const channels = [
     icon: Github,
     label: "Issues",
     value: "Open a GitHub issue",
-    href: "https://github.com",
+    href: "https://github.com/yudono/toolify",
     accent: "text-purple",
   },
   {

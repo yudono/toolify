@@ -21,7 +21,7 @@ export function Footer() {
           <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
           <Link to="/terms" className="hover:text-foreground">Terms</Link>
           <Link to="/contact" className="hover:text-foreground">Contact</Link>
-          <a href="https://github.com" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 hover:text-foreground">
+          <a href="https://github.com/yudono/toolify" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 hover:text-foreground">
             <Github className="size-4" /> GitHub
           </a>
         </nav>

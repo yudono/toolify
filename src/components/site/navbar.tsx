@@ -92,7 +92,7 @@ export function Navbar() {
             </button>
             <ThemeToggle />
             <a
-              href="https://github.com"
+              href="https://github.com/yudono/toolify"
               target="_blank"
               rel="noreferrer"
               aria-label="GitHub"
