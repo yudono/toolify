@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "toolify-favorites";
 
@@ -18,11 +18,26 @@ function writeFavorites(slugs: string[]) {
   } catch {}
 }
 
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getSnapshot() {
+  return JSON.stringify(readFavorites());
+}
+
+function getServerSnapshot() {
+  return "[]";
+}
+
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<string[]>(() => readFavorites());
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setFavorites(readFavorites());
+    setMounted(true);
   }, []);
 
   const toggle = useCallback((slug: string) => {
@@ -33,7 +48,7 @@ export function useFavorites() {
     });
   }, []);
 
-  const isFavorite = useCallback((slug: string) => favorites.includes(slug), [favorites]);
+  const isFavorite = useCallback((slug: string) => mounted && favorites.includes(slug), [favorites, mounted]);
 
   return { favorites, toggle, isFavorite };
 }

@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Github, Menu, Search, X } from "lucide-react";
+import { Github, Heart, Menu, Search, X } from "lucide-react";
 import { useState } from "react";
 import { categories, accentClass } from "@/lib/tools";
 import { Icon } from "./icon";
 import { ThemeToggle } from "./theme-toggle";
 import { CommandPalette, useCommandPalette } from "./command-palette";
+import { useFavoritesContext } from "@/components/favorites-provider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,7 @@ import {
 
 export function Navbar() {
   const { open, setOpen } = useCommandPalette();
+  const { favorites } = useFavoritesContext();
   const [mobile, setMobile] = useState(false);
 
   return (
@@ -59,6 +61,19 @@ export function Navbar() {
               className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               All tools
+            </Link>
+            <Link
+              to="/tools"
+              search={{ category: "all", q: "favorites" }}
+              className="relative inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Heart className={`size-3.5 ${favorites.length > 0 ? "fill-pink text-pink" : ""}`} />
+              Favorites
+              {favorites.length > 0 && (
+                <span className="ml-0.5 inline-flex size-4 items-center justify-center rounded-full bg-pink text-[10px] font-bold text-white">
+                  {favorites.length}
+                </span>
+              )}
             </Link>
             <Link
               to="/about"
@@ -114,6 +129,10 @@ export function Navbar() {
             <div className="mt-3 flex gap-4 text-sm text-muted-foreground">
               <Link to="/tools" onClick={() => setMobile(false)}>
                 All tools
+              </Link>
+              <Link to="/tools" search={{ category: "all", q: "favorites" }} onClick={() => setMobile(false)} className="inline-flex items-center gap-1">
+                <Heart className={`size-3 ${favorites.length > 0 ? "fill-pink text-pink" : ""}`} />
+                Favorites {favorites.length > 0 && `(${favorites.length})`}
               </Link>
               <Link to="/about" onClick={() => setMobile(false)}>
                 About

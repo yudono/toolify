@@ -951,7 +951,8 @@ export type CategoryId =
   | "api"
   | "database"
   | "javascript"
-  | "image";
+  | "image"
+  | "flutter";
 
 export type Accent = "brand" | "blue" | "purple" | "pink" | "orange" | "yellow" | "green" | "teal" | "cyan";
 
@@ -1009,6 +1010,7 @@ export const categories: Category[] = [
   { id: "database", name: "Database", blurb: "SQL, schemas, and queries", accent: "teal", icon: "Database" },
   { id: "javascript", name: "JavaScript", blurb: "Code gen, minify, and utilities", accent: "yellow", icon: "FileCode" },
   { id: "image", name: "Image", blurb: "SVG tools and optimization", accent: "pink", icon: "Image" },
+  { id: "flutter", name: "Flutter", blurb: "Dart code generators", accent: "teal", icon: "Smartphone" },
 ];
 
 const F = { format: "Format", minify: "Minify", run: "Run", generate: "Generate" };
@@ -6263,6 +6265,360 @@ export const tools: Tool[] = [
         { q: "When would I use Base64 for images?", a: "Base64 encoding is useful for embedding small images directly in HTML/CSS (reducing HTTP requests), or when you need to transmit binary image data as text." },
       ],
     },
+
+  // ─── Flutter ────────────────────────────────────────────
+  {
+    slug: "flutter-model-generator",
+    name: "Model Class Generator",
+    description: "Generate a Dart model class from a JSON sample with fromJson/toJson",
+    category: "flutter",
+    icon: "FileCode2",
+    accent: "teal",
+    outputLanguage: "dart",
+    sample: '{\n  "id": 1,\n  "name": "Ada",\n  "email": "ada@example.com",\n  "isActive": true,\n  "tags": ["admin"]\n}',
+    actions: [{ id: "generate", label: "Generate model" }],
+    run: (input) => {
+      const obj = parseJson(input) as Record<string, unknown>;
+      const lines: string[] = ["class Model {", "  Model({"];
+
+      const fields: { name: string; type: string; jsonKey: string }[] = [];
+      for (const [key, val] of Object.entries(obj)) {
+        const camel = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        let type = "dynamic";
+        if (val === null) type = "dynamic";
+        else if (typeof val === "string") type = "String";
+        else if (typeof val === "boolean") type = "bool";
+        else if (typeof val === "number") type = Number.isInteger(val) ? "int" : "double";
+        else if (Array.isArray(val)) {
+          if (val.length > 0 && typeof val[0] === "string") type = "List<String>";
+          else if (val.length > 0 && typeof val[0] === "number") type = "List<int>";
+          else type = "List<dynamic>";
+        } else if (typeof val === "object") type = "Map<String, dynamic>";
+        fields.push({ name: camel, type, jsonKey: key });
+      }
+
+      fields.forEach((f, i) => {
+        lines.push(`    required this.${f.name}${i < fields.length - 1 ? "," : ""}`);
+      });
+      lines.push("  });");
+
+      lines.push("");
+      lines.push("  factory Model.fromJson(Map<String, dynamic> json) => Model(");
+      fields.forEach((f, i) => {
+        const accessor = f.type === "String" ? "" : f.type === "int" ? " as int" : f.type === "double" ? " as double" : f.type === "bool" ? " as bool" : "";
+        lines.push(`    ${f.name}: json['${f.jsonKey}']${accessor}${f.type === "int" || f.type === "double" ? "" : ""},`);
+      });
+      lines.push("  );");
+
+      lines.push("");
+      lines.push("  Map<String, dynamic> toJson() => {");
+      fields.forEach((f) => {
+        lines.push(`    '${f.jsonKey}': ${f.name},`);
+      });
+      lines.push("  };");
+
+      fields.forEach((f) => {
+        lines.push("");
+        lines.push(`  final ${f.type} ${f.name};`);
+      });
+
+      lines.push("}");
+      return lines.join("\n");
+    },
+    faq: [
+      { q: "What does this generator produce?", a: "A Dart class with a constructor, fromJson factory, and toJson method — ready to use in Flutter apps." },
+      { q: "Does it handle nested objects?", a: "Nested objects become Map<String, dynamic>. For deeper models, generate each level separately." },
+    ],
+  },
+
+  {
+    slug: "flutter-freezed-generator",
+    name: "Freezed Generator",
+    description: "Generate a Freezed-annotated Dart class with copyWith, ==, and hashCode",
+    category: "flutter",
+    icon: "Snowflake",
+    accent: "teal",
+    outputLanguage: "dart",
+    sample: '{\n  "id": 1,\n  "name": "Ada",\n  "email": "ada@example.com"\n}',
+    actions: [{ id: "generate", label: "Generate freezed class" }],
+    run: (input) => {
+      const obj = parseJson(input) as Record<string, unknown>;
+      const lines: string[] = [
+        "import 'package:freezed_annotation/freezed_annotation.dart';",
+        "",
+        "part 'model.freezed.dart';",
+        "part 'model.g.dart';",
+        "",
+        "@freezed",
+        "class Model with _\$Model {",
+        "  const factory Model({",
+      ];
+
+      for (const [key, val] of Object.entries(obj)) {
+        const camel = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        let type = "dynamic";
+        if (val === null) type = "dynamic";
+        else if (typeof val === "string") type = "String";
+        else if (typeof val === "boolean") type = "bool";
+        else if (typeof val === "number") type = Number.isInteger(val) ? "int" : "double";
+        else if (Array.isArray(val)) type = "List<dynamic>";
+        else if (typeof val === "object") type = "Map<String, dynamic>";
+        lines.push(`    ${type}? ${camel},`);
+      }
+
+      lines.push("  }) = _Model;");
+      lines.push("");
+      lines.push("  factory Model.fromJson(Map<String, dynamic> json) => _\$ModelFromJson(json);");
+      lines.push("}");
+      return lines.join("\n");
+    },
+    faq: [
+      { q: "What is Freezed?", a: "A Dart code generator that creates immutable data classes with copyWith, ==, hashCode, toString, and JSON serialization." },
+      { q: "What parts do I need to add?", a: "After generating, run 'dart run build_runner build' to produce the .freezed.dart and .g.dart files." },
+    ],
+  },
+
+  {
+    slug: "flutter-json-serializable-generator",
+    name: "JSON Serializable Generator",
+    description: "Generate a json_serializable annotated Dart class for type-safe JSON",
+    category: "flutter",
+    icon: "FileJson",
+    accent: "teal",
+    outputLanguage: "dart",
+    sample: '{\n  "id": 1,\n  "name": "Ada",\n  "score": 98.5,\n  "isActive": true\n}',
+    actions: [{ id: "generate", label: "Generate class" }],
+    run: (input) => {
+      const obj = parseJson(input) as Record<string, unknown>;
+      const lines: string[] = [
+        "import 'package:json_annotation/json_annotation.dart';",
+        "",
+        "part 'model.g.dart';",
+        "",
+        "@JsonSerializable()",
+        "class Model {",
+        "  Model({",
+      ];
+
+      const fields: { name: string; type: string; jsonKey: string }[] = [];
+      for (const [key, val] of Object.entries(obj)) {
+        const camel = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        let type = "dynamic";
+        if (val === null) type = "dynamic";
+        else if (typeof val === "string") type = "String";
+        else if (typeof val === "boolean") type = "bool";
+        else if (typeof val === "number") type = Number.isInteger(val) ? "int" : "double";
+        else if (Array.isArray(val)) type = "List<dynamic>";
+        else if (typeof val === "object") type = "Map<String, dynamic>";
+        fields.push({ name: camel, type, jsonKey: key });
+      }
+
+      fields.forEach((f, i) => {
+        lines.push(`    required this.${f.name}${i < fields.length - 1 ? "," : ""}`);
+      });
+      lines.push("  });");
+
+      lines.push("");
+      lines.push("  factory Model.fromJson(Map<String, dynamic> json) => _\$ModelFromJson(json);");
+      lines.push("");
+      lines.push("  Map<String, dynamic> toJson() => _\$ModelToJson(this);");
+
+      fields.forEach((f) => {
+        lines.push("");
+        lines.push(`  final ${f.type} ${f.name};`);
+      });
+
+      lines.push("}");
+      return lines.join("\n");
+    },
+    faq: [
+      { q: "How do I use this?", a: "Paste your JSON, generate the class, then run 'dart run build_runner build' to create the .g.dart file." },
+      { q: "Does it handle nested objects?", a: "Nested objects become Map<String, dynamic>. For typed nested models, annotate them with @JsonSerializable() too." },
+    ],
+  },
+
+  {
+    slug: "flutter-hive-adapter-generator",
+    name: "Hive Type Adapter Generator",
+    description: "Generate a Hive TypeAdapter for local NoSQL storage in Flutter",
+    category: "flutter",
+    icon: "Database",
+    accent: "teal",
+    outputLanguage: "dart",
+    sample: '{\n  "id": 1,\n  "name": "Ada",\n  "email": "ada@example.com"\n}',
+    actions: [{ id: "generate", label: "Generate adapter" }],
+    run: (input) => {
+      const obj = parseJson(input) as Record<string, unknown>;
+      const fields: { name: string; type: string; typeId: number }[] = [];
+      let typeId = 0;
+
+      for (const [key, val] of Object.entries(obj)) {
+        const camel = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        let type = "dynamic";
+        if (val === null) type = "dynamic";
+        else if (typeof val === "string") type = "String";
+        else if (typeof val === "boolean") type = "bool";
+        else if (typeof val === "number") type = Number.isInteger(val) ? "int" : "double";
+        else if (Array.isArray(val)) type = "List<dynamic>";
+        else if (typeof val === "object") type = "Map<String, dynamic>";
+        fields.push({ name: camel, type, typeId: typeId++ });
+      }
+
+      const lines: string[] = [
+        "import 'package:hive/hive.dart';",
+        "",
+        "class ModelAdapter extends TypeAdapter<Model> {",
+        "  @override",
+        "  final int typeId = 0;",
+        "",
+        "  @override",
+        "  Model read(BinaryReader reader) {",
+        "    final numOfFields = reader.readByte();",
+        "    final fields = <int, dynamic>{};",
+        "    for (int i = 0; i < numOfFields; i++) {",
+        "      fields[reader.readByte()] = reader.read();",
+        "    }",
+        "    return Model(",
+      ];
+
+      fields.forEach((f) => {
+        lines.push(`      ${f.name}: fields[${f.typeId}] as ${f.type}${f.type === "dynamic" ? "" : "?"},`);
+      });
+
+      lines.push("    );");
+      lines.push("  }");
+      lines.push("");
+      lines.push("  @override");
+      lines.push("  void write(BinaryWriter writer, Model obj) {");
+      lines.push("    writer.writeByte(${fields.length});");
+      fields.forEach((f) => {
+        lines.push("    writer.writeByte(${f.typeId});");
+        lines.push("    writer.write(obj.${f.name});");
+      });
+      lines.push("  }");
+      lines.push("}");
+      return lines.join("\n");
+    },
+    faq: [
+      { q: "What is a TypeAdapter?", a: "A Hive adapter that knows how to read/write your Dart class to binary format for fast local storage." },
+      { q: "How do I register it?", a: "Call 'Hive.registerAdapter(ModelAdapter())' before opening a box of type Model." },
+    ],
+  },
+
+  {
+    slug: "flutter-isar-collection-generator",
+    name: "Isar Collection Generator",
+    description: "Generate an Isar collection class for fast local database in Flutter",
+    category: "flutter",
+    icon: "HardDrive",
+    accent: "teal",
+    outputLanguage: "dart",
+    sample: '{\n  "id": 1,\n  "title": "Buy groceries",\n  "isDone": false,\n  "createdAt": "2026-01-01"\n}',
+    actions: [{ id: "generate", label: "Generate collection" }],
+    run: (input) => {
+      const obj = parseJson(input) as Record<string, unknown>;
+      const fields: { name: string; type: string; isarType: string }[] = [];
+
+      for (const [key, val] of Object.entries(obj)) {
+        const camel = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        let type = "dynamic";
+        let isarType = "IsarDynamic";
+        if (val === null) { type = "dynamic"; isarType = "IsarDynamic"; }
+        else if (typeof val === "string") { type = "String"; isarType = "IsarString"; }
+        else if (typeof val === "boolean") { type = "bool"; isarType = "IsarBool"; }
+        else if (typeof val === "number") {
+          if (Number.isInteger(val)) { type = "int"; isarType = "IsarLong"; }
+          else { type = "double"; isarType = "IsarDouble"; }
+        }
+        else if (Array.isArray(val)) { type = "List<String>"; isarType = "IsarString"; }
+        else if (typeof val === "object") { type = "Map<String, dynamic>"; isarType = "IsarJson"; }
+        fields.push({ name: camel, type, isarType });
+      }
+
+      const lines: string[] = [
+        "import 'package:isar/isar.dart';",
+        "",
+        "part 'model.g.dart';",
+        "",
+        "@collection",
+        "class Model {",
+        "  Id id = Isar.autoIncrement;",
+        "",
+      ];
+
+      fields.forEach((f) => {
+        if (f.name === "id") return;
+        if (f.type === "List<String>") {
+          lines.push("  @Index(type: IndexType.value)");
+          lines.push("  List<String> ${f.name} = [];");
+        } else if (f.type === "Map<String, dynamic>") {
+          lines.push("  String ${f.name}Json = '{}';");
+        } else {
+          lines.push("  late ${f.type} ${f.name};");
+        }
+        lines.push("");
+      });
+
+      lines.push("}");
+      return lines.join("\n");
+    },
+    faq: [
+      { q: "What is Isar?", a: "A fast, asynchronous, and reactive NoSQL database for Flutter that supports full-text search and complex queries." },
+      { q: "How do I use this?", a: "Generate the collection, then run 'dart run build_runner build' to create the .g.dart file with Isar code." },
+    ],
+  },
+
+  {
+    slug: "flutter-enum-generator",
+    name: "Enum Generator",
+    description: "Generate a Dart enum from a list of values with optional extensions",
+    category: "flutter",
+    icon: "List",
+    accent: "teal",
+    outputLanguage: "dart",
+    sample: "active\ninactive\npending\nbanned",
+    actions: [{ id: "generate", label: "Generate enum" }],
+    run: (input) => {
+      const values = input.split("\n").map((l) => l.trim()).filter(Boolean);
+      const lines: string[] = [
+        "enum UserStatus {",
+      ];
+
+      values.forEach((v, i) => {
+        const snake = v.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+        lines.push(`  ${snake}${i < values.length - 1 ? "," : ""}`);
+      });
+
+      lines.push("}");
+      lines.push("");
+      lines.push("extension UserStatusExtension on UserStatus {");
+      lines.push("  String get label {");
+      lines.push("    switch (this) {");
+
+      values.forEach((v) => {
+        const snake = v.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+        lines.push(`      case UserStatus.${snake}:`);
+        lines.push(`        return '${v}';`);
+      });
+
+      lines.push("    }");
+      const defaultVal = values.length > 0 ? values[0].toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") : "active";
+      lines.push("  }");
+      lines.push("");
+      lines.push("  static UserStatus fromString(String value) {");
+      lines.push("    return UserStatus.values.firstWhere(");
+      lines.push("      (e) => e.name == value,");
+      lines.push(`      orElse: () => UserStatus.${defaultVal},`);
+      lines.push("    );");
+      lines.push("  }");
+      lines.push("}");
+      return lines.join("\n");
+    },
+    faq: [
+      { q: "What does this produce?", a: "A Dart enum with all your values, plus an extension with a label getter and a fromString factory method." },
+      { q: "How should I format the input?", a: "One value per line, e.g. 'active', 'inactive', 'pending'. Spaces become underscores in the enum names." },
+    ],
+  },
 
 ];
 

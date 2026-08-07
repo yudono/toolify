@@ -14,8 +14,8 @@ function callRun(tool: Tool, input: string, action: string): string | Promise<st
 // ─── Category Tests ─────────────────────────────────────────
 
 describe("categories", () => {
-  it("has 11 categories", () => {
-    expect(categories.length).toBe(11);
+  it("has 12 categories", () => {
+    expect(categories.length).toBe(12);
   });
 
   it("contains expected category IDs", () => {

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Flame, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, Flame, Heart, ShieldCheck, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { tools, categories, accentClass } from "@/lib/tools";
 import { ToolCard } from "@/components/site/tool-card";
 import { Icon } from "@/components/site/icon";
 import { HeroArt } from "@/components/site/hero-art";
+import { useFavoritesContext } from "@/components/favorites-provider";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,7 +32,9 @@ const LOAD_MORE_COUNT = 24;
 
 function Index() {
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT);
+  const { favorites } = useFavoritesContext();
   const trending = tools.filter((t) => t.trending);
+  const favTools = tools.filter((t) => favorites.includes(t.slug));
   const allTools = tools;
   const visibleTrending = trending.slice(0, visibleCount);
   const hasMore = visibleCount < tools.length;
@@ -100,6 +103,20 @@ function Index() {
           ))}
         </div>
       </Section>
+
+      {favTools.length > 0 && (
+        <Section
+          eyebrow={<Heart className="size-4 text-pink fill-pink" />}
+          title="Your favorites"
+          subtitle={`${favTools.length} ${favTools.length === 1 ? "tool" : "tools"} saved.`}
+        >
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {favTools.map((tool, i) => (
+              <ToolCard key={tool.slug} tool={tool} index={i} />
+            ))}
+          </div>
+        </Section>
+      )}
 
       <Section title="All tools" subtitle="Browse every utility — all run locally in your browser.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
