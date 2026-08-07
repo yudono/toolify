@@ -12,6 +12,7 @@ import {
 import { accentClass, categoryById, tools, toolsBySlug } from "@/lib/tools";
 import { Icon } from "@/components/site/icon";
 import { ToolCard } from "@/components/site/tool-card";
+import { CodeEditor } from "@/components/site/code-editor";
 
 export const Route = createFileRoute("/tools/$slug")({
   loader: ({ params }) => {
@@ -48,7 +49,7 @@ function ToolNotFound() {
       </p>
       <Link
         to="/tools"
-        className="mt-6 inline-flex rounded-2xl bg-gradient-brand px-5 py-2.5 text-sm font-medium text-white shadow-soft"
+        className="mt-6 inline-flex rounded-lg border-2 border-foreground bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-soft"
       >
         Browse tools
       </Link>
@@ -72,9 +73,11 @@ function ToolPage() {
     .concat(tools.filter((t) => t.slug !== tool.slug && t.category !== tool.category))
     .slice(0, 3);
 
-  const runAction = (action: string) => {
+  const runAction = async (action: string) => {
     try {
-      setOutput(tool.run(input, action));
+      const result = tool.run(input, action);
+      const output = result instanceof Promise ? await result : result;
+      setOutput(output);
       setError("");
     } catch (e) {
       setOutput("");
@@ -117,7 +120,7 @@ function ToolPage() {
       <header className="mt-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 sm:flex sm:justify-between">
         <div className="flex min-w-0 items-center gap-4">
           <span
-            className={`grid size-14 shrink-0 place-items-center rounded-3xl ${a.bg} ${a.text} ring-1 ${a.ring}`}
+            className={`grid size-14 shrink-0 place-items-center rounded-lg ${a.bg} ${a.text} border-2 border-foreground`}
           >
             <Icon name={tool.icon} className="size-6" />
           </span>
@@ -131,7 +134,7 @@ function ToolPage() {
         <Link
           to="/tools"
           search={{ category: tool.category }}
-          className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${a.bg} ${a.text}`}
+          className={`shrink-0 rounded-sm border border-foreground/20 px-3 py-1.5 text-xs font-medium ${a.bg} ${a.text}`}
         >
           {category.name}
         </Link>
@@ -157,7 +160,7 @@ function ToolPage() {
               onChange={(e) => setInput(e.target.value)}
               placeholder={tool.placeholder ?? "Paste your content here..."}
               spellCheck={false}
-              className="h-72 w-full resize-none rounded-2xl bg-surface-muted p-4 font-mono text-sm leading-relaxed outline-none ring-1 ring-border/60 transition-shadow focus:ring-2 focus:ring-ring/50"
+              className="h-72 w-full resize-none rounded-lg bg-surface-muted p-4 font-mono text-sm leading-relaxed outline-none border-2 border-foreground transition-shadow focus:ring-2 focus:ring-ring/50"
             />
           </Panel>
         )}
@@ -170,14 +173,14 @@ function ToolPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={copy}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-2.5 py-1.5 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/70"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-foreground/20 bg-accent px-2.5 py-1.5 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/70"
                 >
                   {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                   Copy
                 </button>
                 <button
                   onClick={download}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-accent px-2.5 py-1.5 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/70"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-foreground/20 bg-accent px-2.5 py-1.5 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/70"
                 >
                   <Download className="size-3.5" /> Download
                 </button>
@@ -186,24 +189,24 @@ function ToolPage() {
           }
         >
           {error ? (
-            <div className="flex h-72 flex-col items-center justify-center rounded-2xl bg-destructive/8 p-6 text-center ring-1 ring-destructive/20">
-              <span className="grid size-12 place-items-center rounded-2xl bg-destructive/12 text-destructive">
+            <div className="flex h-72 flex-col items-center justify-center rounded-lg bg-destructive/8 p-6 text-center border-2 border-destructive/30">
+              <span className="grid size-12 place-items-center rounded-lg bg-destructive/12 text-destructive">
                 <Icon name="TriangleAlert" className="size-5" />
               </span>
               <p className="mt-4 max-w-sm text-sm font-medium text-destructive">{error}</p>
             </div>
           ) : output ? (
-            <motion.pre
+            <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="h-72 w-full overflow-auto rounded-2xl bg-surface-muted p-4 font-mono text-sm leading-relaxed ring-1 ring-border/60"
+              className="h-72 w-full overflow-hidden rounded-lg"
             >
-              {output}
-            </motion.pre>
+              <CodeEditor value={output} height="100%" />
+            </motion.div>
           ) : (
-            <div className="flex h-72 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-surface-muted p-6 text-center">
-              <span className="grid size-12 place-items-center rounded-2xl bg-gradient-brand text-white">
+            <div className="flex h-72 flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted p-6 text-center">
+              <span className="grid size-12 place-items-center rounded-lg bg-brand text-white border-2 border-foreground">
                 <Wand2 className="size-5" />
               </span>
               <p className="mt-4 text-sm text-muted-foreground">
@@ -219,10 +222,10 @@ function ToolPage() {
           <button
             key={action.id}
             onClick={() => runAction(action.id)}
-            className={`rounded-2xl px-5 py-2.5 text-sm font-medium transition-transform duration-200 hover:scale-[1.03] active:scale-95 ${
+            className={`rounded-lg px-5 py-2.5 text-sm font-semibold border-2 border-foreground transition-transform duration-100 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-lift active:translate-x-0 active:translate-y-0 active:shadow-none ${
               i === 0
-                ? "bg-gradient-brand text-white shadow-soft"
-                : "border border-border/70 bg-surface text-foreground shadow-soft"
+                ? "bg-brand text-white shadow-soft"
+                : "bg-surface text-foreground shadow-soft"
             }`}
           >
             {action.label}
@@ -232,7 +235,7 @@ function ToolPage() {
 
       <section className="mt-16">
         <h2 className="text-xl font-semibold tracking-tight">Frequently asked</h2>
-        <Accordion type="single" collapsible className="mt-4 overflow-hidden rounded-3xl border border-border/70 bg-surface px-5 shadow-soft">
+        <Accordion type="single" collapsible className="mt-4 overflow-hidden rounded-lg border-2 border-foreground bg-surface px-5 shadow-soft">
           {tool.faq.map((item) => (
             <AccordionItem key={item.q} value={item.q} className="border-border/60">
               <AccordionTrigger className="text-left text-sm font-medium hover:no-underline">
@@ -278,7 +281,7 @@ function Panel({
   className?: string;
 }) {
   return (
-    <div className={`rounded-3xl border border-border/70 bg-surface p-4 shadow-soft ${className}`}>
+    <div className={`rounded-lg border-2 border-foreground bg-surface p-4 shadow-soft ${className}`}>
       <div className="mb-3 flex min-h-8 items-center justify-between gap-3 px-1">
         <span className="text-sm font-semibold">{title}</span>
         {action}

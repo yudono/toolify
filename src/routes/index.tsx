@@ -32,28 +32,16 @@ function Index() {
   return (
     <div className="overflow-x-clip">
       <section className="relative mx-auto w-full max-w-6xl px-5 pb-16 pt-14 sm:pt-20">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -left-32 -top-24 size-96 rounded-full bg-purple/25 blur-[110px]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-24 top-32 size-80 rounded-full bg-blue/20 blur-[110px]"
-        />
         <div className="relative grid items-center gap-12 lg:grid-cols-[1.05fr_1fr]">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-surface px-3.5 py-1.5 text-xs font-medium shadow-soft">
-              <Sparkles className="size-3.5 text-brand" />
-              {tools.length} tools · runs offline · zero uploads
-            </span>
             <h1 className="mt-6 text-5xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
               Developer Tools,
               <br />
-              <span className="text-gradient">Without the Noise.</span>
+              <span className="text-brand">Without the Noise.</span>
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-muted-foreground">
               Fast, private developer utilities that run entirely in your browser. No uploads. No
@@ -62,13 +50,13 @@ function Index() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 to="/tools"
-                className="inline-flex items-center gap-2 rounded-2xl bg-gradient-brand px-6 py-3 text-sm font-medium text-white shadow-lift transition-transform duration-200 hover:scale-[1.03] active:scale-95"
+                className="inline-flex items-center gap-2 rounded-lg border-2 border-foreground bg-brand px-6 py-3 text-sm font-semibold text-white shadow-soft transition-transform duration-100 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-lift active:translate-x-0 active:translate-y-0 active:shadow-none"
               >
                 Browse Tools <ArrowRight className="size-4" />
               </Link>
               <Link
                 to="/about"
-                className="inline-flex items-center gap-2 rounded-2xl border border-border/70 bg-surface px-6 py-3 text-sm font-medium shadow-soft transition-transform duration-200 hover:scale-[1.03]"
+                className="inline-flex items-center gap-2 rounded-lg border-2 border-foreground bg-surface px-6 py-3 text-sm font-semibold shadow-soft transition-transform duration-100 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-lift active:translate-x-0 active:translate-y-0 active:shadow-none"
               >
                 Explore
               </Link>
@@ -122,10 +110,10 @@ function Index() {
                 <Link
                   to="/tools"
                   search={{ category: c.id }}
-                  className={`lift flex h-full flex-col gap-3 rounded-3xl border border-border/70 bg-surface p-5 shadow-soft`}
+                  className="lift flex h-full flex-col gap-3 rounded-lg border-2 border-foreground bg-surface p-5 shadow-soft"
                 >
                   <span
-                    className={`grid size-11 place-items-center rounded-2xl bg-gradient-to-br ${a.grad} text-white shadow-soft`}
+                    className={`grid size-11 place-items-center rounded-lg ${a.bg} text-white border-2 border-foreground shadow-soft`}
                   >
                     <Icon name={c.icon} className="size-5" />
                   </span>
@@ -156,11 +144,7 @@ function Index() {
       </Section>
 
       <section className="mx-auto w-full max-w-6xl px-5 pt-20">
-        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-brand px-8 py-14 text-center shadow-lift">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -left-10 -top-16 size-56 rounded-full bg-white/20 blur-3xl"
-          />
+        <div className="relative overflow-hidden rounded-lg border-2 border-foreground bg-brand px-8 py-14 text-center shadow-lift">
           <h2 className="relative text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             Your data never leaves this tab.
           </h2>
@@ -170,7 +154,7 @@ function Index() {
           </p>
           <Link
             to="/tools"
-            className="relative mt-8 inline-flex items-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-medium text-brand shadow-soft transition-transform duration-200 hover:scale-[1.03]"
+            className="relative mt-8 inline-flex items-center gap-2 rounded-lg border-2 border-foreground bg-white px-6 py-3 text-sm font-semibold text-brand shadow-soft transition-transform duration-100 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-lift active:translate-x-0 active:translate-y-0 active:shadow-none"
           >
             Start with a tool <ArrowRight className="size-4" />
           </Link>
