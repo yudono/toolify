@@ -62,7 +62,19 @@ function ToolPage() {
   const a = accentClass[tool.accent];
   const category = categoryById[tool.category]!;
 
-  const [input, setInput] = useState(tool.sample ?? "");
+  const formatInput = (raw: string): string => {
+    const trimmed = raw.trim();
+    if ((trimmed.startsWith("{") || trimmed.startsWith("[")) && !trimmed.startsWith("{ ")) {
+      try {
+        return JSON.stringify(JSON.parse(trimmed), null, 2);
+      } catch {
+        return raw;
+      }
+    }
+    return raw;
+  };
+
+  const [input, setInput] = useState(() => formatInput(tool.sample ?? ""));
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
@@ -186,10 +198,11 @@ function ToolPage() {
                 ref={inputOverlayRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onBlur={(e) => setInput(formatInput(e.target.value))}
                 onScroll={syncScroll}
                 placeholder={tool.placeholder ?? "Paste your content here..."}
                 spellCheck={false}
-                className="absolute inset-0 h-full w-full resize-none border-0 bg-transparent p-4 font-mono text-[13px] leading-relaxed text-transparent caret-white outline-none rounded-none placeholder:text-muted-foreground/50"
+                className="absolute inset-0 z-10 h-full w-full resize-none border-0 bg-transparent p-4 font-mono text-[13px] leading-relaxed text-transparent caret-white outline-none rounded-none placeholder:text-muted-foreground/50"
               />
             </div>
           </Panel>
