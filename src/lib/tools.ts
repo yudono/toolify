@@ -6620,6 +6620,265 @@ export const tools: Tool[] = [
     ],
   },
 
+  // ─── Schema Converter Tools ────────────────────────
+  {
+    slug: "zod-to-yup",
+    outputLanguage: "typescript",
+    name: "Zod to Yup",
+    description: "Convert Zod validation schemas to Yup syntax.",
+    category: "converter",
+    icon: "ArrowLeftRight",
+    accent: "purple",
+    inputLabel: "Zod schema",
+    outputLabel: "Yup schema",
+    placeholder: "Paste your Zod schema...",
+    sample: 'import { z } from "zod";\n\nexport const userSchema = z.object({\n  name: z.string().min(1),\n  email: z.string().email(),\n  age: z.number().min(0).max(150),\n  active: z.boolean(),\n  tags: z.array(z.string()),\n  role: z.string().optional().nullable(),\n});',
+    actions: [{ id: "run", label: "Convert" }],
+    run: (input: string): string => {
+      let result = input;
+      result = result.replace(/z\.string\(\)/g, "yup.string()");
+      result = result.replace(/z\.number\(\)/g, "yup.number()");
+      result = result.replace(/z\.boolean\(\)/g, "yup.boolean()");
+      result = result.replace(/z\.object\(/g, "yup.object().shape(");
+      result = result.replace(/z\.array\(/g, "yup.array().of(");
+      result = result.replace(/\.regex\(([^)]+)\)/g, ".matches($1)");
+      result = result.replace(/import\s*\{\s*z\s*\}\s*from\s*["']zod["'];?/g, 'import * as yup from "yup";');
+      return result;
+    },
+    faq: [
+      { q: "What Zod features are supported?", a: "It handles basic types (string, number, boolean), objects, arrays, and common validators like .min(), .max(), .email(), .optional(), and .nullable()." },
+      { q: "Are there edge cases?", a: "Complex Zod features like discriminated unions, transforms, or custom refinements may need manual conversion." },
+    ],
+  },
+  {
+    slug: "yup-to-zod",
+    outputLanguage: "typescript",
+    name: "Yup to Zod",
+    description: "Convert Yup validation schemas to Zod syntax.",
+    category: "converter",
+    icon: "ArrowLeftRight",
+    accent: "purple",
+    inputLabel: "Yup schema",
+    outputLabel: "Zod schema",
+    placeholder: "Paste your Yup schema...",
+    sample: 'import * as yup from "yup";\n\nexport const userSchema = yup.object().shape({\n  name: yup.string().min(1),\n  email: yup.string().email(),\n  age: yup.number().min(0).max(150),\n  active: yup.boolean(),\n  tags: yup.array().of(yup.string()),\n  role: yup.string().optional().nullable(),\n});',
+    actions: [{ id: "run", label: "Convert" }],
+    run: (input: string): string => {
+      let result = input;
+      result = result.replace(/yup\.string\(\)/g, "z.string()");
+      result = result.replace(/yup\.number\(\)/g, "z.number()");
+      result = result.replace(/yup\.boolean\(\)/g, "z.boolean()");
+      result = result.replace(/yup\.object\(\)\.shape\(/g, "z.object(");
+      result = result.replace(/yup\.array\(\)\.of\(/g, "z.array(");
+      result = result.replace(/\.matches\(([^)]+)\)/g, ".regex($1)");
+      result = result.replace(/import\s*\*\s*as\s*yup\s*from\s*["']yup["'];?/g, 'import { z } from "zod";');
+      return result;
+    },
+    faq: [
+      { q: "What Yup features are supported?", a: "It handles basic types, objects, arrays, and common validators like .min(), .max(), .email(), .optional(), .nullable(), and .matches()." },
+      { q: "Does it handle Yup .shape() correctly?", a: "Yes, yup.object().shape({...}) is converted to z.object({...})." },
+    ],
+  },
+  {
+    slug: "zod-to-valibot",
+    outputLanguage: "typescript",
+    name: "Zod to Valibot",
+    description: "Convert Zod validation schemas to Valibot syntax.",
+    category: "converter",
+    icon: "RefreshCw",
+    accent: "purple",
+    inputLabel: "Zod schema",
+    outputLabel: "Valibot schema",
+    placeholder: "Paste your Zod schema...",
+    sample: 'import { z } from "zod";\n\nexport const userSchema = z.object({\n  name: z.string().min(1),\n  email: z.string().email(),\n  age: z.number().min(0).max(150),\n  active: z.boolean(),\n  tags: z.array(z.string()),\n  role: z.string().optional().nullable(),\n});',
+    actions: [{ id: "run", label: "Convert" }],
+    run: (input: string): string => {
+      let result = input;
+      result = result.replace(/z\.string\(\)/g, "v.string()");
+      result = result.replace(/z\.number\(\)/g, "v.number()");
+      result = result.replace(/z\.boolean\(\)/g, "v.boolean()");
+      result = result.replace(/z\.object\(/g, "v.object(");
+      result = result.replace(/z\.array\(/g, "v.array(");
+      result = result.replace(/\.min\((\d+)\)/g, ".minLength($1)");
+      result = result.replace(/\.max\((\d+)\)/g, ".maxLength($1)");
+      result = result.replace(/import\s*\{\s*z\s*\}\s*from\s*["']zod["'];?/g, 'import * as v from "valibot";');
+      return result;
+    },
+    faq: [
+      { q: "What Zod features are supported?", a: "It handles basic types, objects, arrays, and validators like .min(), .max(), .email(), .optional(), and .nullable()." },
+      { q: "How does Valibot differ from Zod?", a: "Valibot uses a functional API and is designed to be smaller in bundle size. Validators like .min() become .minLength() for strings/arrays." },
+    ],
+  },
+  {
+    slug: "valibot-to-zod",
+    outputLanguage: "typescript",
+    name: "Valibot to Zod",
+    description: "Convert Valibot validation schemas to Zod syntax.",
+    category: "converter",
+    icon: "RefreshCw",
+    accent: "purple",
+    inputLabel: "Valibot schema",
+    outputLabel: "Zod schema",
+    placeholder: "Paste your Valibot schema...",
+    sample: 'import * as v from "valibot";\n\nexport const userSchema = v.object({\n  name: v.string().minLength(1),\n  email: v.string().email(),\n  age: v.number().min(0).max(150),\n  active: v.boolean(),\n  tags: v.array(v.string()),\n  role: v.string().optional().nullable(),\n});',
+    actions: [{ id: "run", label: "Convert" }],
+    run: (input: string): string => {
+      let result = input;
+      result = result.replace(/v\.string\(\)/g, "z.string()");
+      result = result.replace(/v\.number\(\)/g, "z.number()");
+      result = result.replace(/v\.boolean\(\)/g, "z.boolean()");
+      result = result.replace(/v\.object\(/g, "z.object(");
+      result = result.replace(/v\.array\(/g, "z.array(");
+      result = result.replace(/\.minLength\((\d+)\)/g, ".min($1)");
+      result = result.replace(/\.maxLength\((\d+)\)/g, ".max($1)");
+      result = result.replace(/import\s*\*\s*as\s*v\s*from\s*["']valibot["'];?/g, 'import { z } from "zod";');
+      return result;
+    },
+    faq: [
+      { q: "What Valibot features are supported?", a: "It handles basic types, objects, arrays, and validators like .minLength(), .maxLength(), .email(), .optional(), and .nullable()." },
+      { q: "How does the API differ?", a: "Valibot's .minLength()/.maxLength() become Zod's .min()/.max() for strings and arrays." },
+    ],
+  },
+  {
+    slug: "json-schema-to-zod",
+    outputLanguage: "typescript",
+    name: "JSON Schema to Zod",
+    description: "Convert a JSON Schema object to a Zod validation schema.",
+    category: "converter",
+    icon: "FileCode2",
+    accent: "purple",
+    inputLabel: "JSON Schema",
+    outputLabel: "Zod schema",
+    placeholder: "Paste a JSON Schema object...",
+    sample: '{\n  "type": "object",\n  "properties": {\n    "name": { "type": "string" },\n    "age": { "type": "number" },\n    "active": { "type": "boolean" },\n    "tags": { "type": "array", "items": { "type": "string" } }\n  },\n  "required": ["name", "age"]\n}',
+    actions: [{ id: "run", label: "Convert" }],
+    run: (input: string): string => {
+      function schemaToZod(schema: Record<string, unknown>, required: string[] = []): string {
+        const type = schema.type as string;
+        if (type === "string") return "z.string()";
+        if (type === "number" || type === "integer") return "z.number()";
+        if (type === "boolean") return "z.boolean()";
+        if (type === "array") {
+          const items = schema.items as Record<string, unknown> | undefined;
+          const inner = items ? schemaToZod(items, required) : "z.unknown()";
+          return "z.array(" + inner + ")";
+        }
+        if (type === "object") {
+          const props = (schema.properties || {}) as Record<string, Record<string, unknown>>;
+          const req = (schema.required || []) as string[];
+          const fields = Object.entries(props).map(([key, val]) => {
+            const fieldSchema = schemaToZod(val, req);
+            const isRequired = req.includes(key);
+            return "    " + key + ": " + (isRequired ? fieldSchema : fieldSchema.replace(/\)$/, ".optional())"));
+          });
+          return "z.object({\n" + fields.join(",\n") + "\n  })";
+        }
+        return "z.unknown()";
+      }
+      const parsed = parseJson(input) as Record<string, unknown>;
+      const required = (parsed.required || []) as string[];
+      const zodSchema = schemaToZod(parsed, required);
+      return `import { z } from "zod";\n\nexport const schema = ${zodSchema};`;
+    },
+    faq: [
+      { q: "Which JSON Schema types are supported?", a: "It supports string, number, integer, boolean, array, and object types. Nested schemas are recursively converted." },
+      { q: "How are required fields handled?", a: "Fields listed in the 'required' array are generated without .optional(), while optional fields get .optional() appended." },
+    ],
+  },
+  {
+    slug: "json-schema-to-yup",
+    outputLanguage: "typescript",
+    name: "JSON Schema to Yup",
+    description: "Convert a JSON Schema object to a Yup validation schema.",
+    category: "converter",
+    icon: "FileCode2",
+    accent: "purple",
+    inputLabel: "JSON Schema",
+    outputLabel: "Yup schema",
+    placeholder: "Paste a JSON Schema object...",
+    sample: '{\n  "type": "object",\n  "properties": {\n    "name": { "type": "string" },\n    "age": { "type": "number" },\n    "active": { "type": "boolean" },\n    "tags": { "type": "array", "items": { "type": "string" } }\n  },\n  "required": ["name", "age"]\n}',
+    actions: [{ id: "run", label: "Convert" }],
+    run: (input: string): string => {
+      function schemaToYup(schema: Record<string, unknown>, required: string[] = []): string {
+        const type = schema.type as string;
+        if (type === "string") return "yup.string()";
+        if (type === "number" || type === "integer") return "yup.number()";
+        if (type === "boolean") return "yup.boolean()";
+        if (type === "array") {
+          const items = schema.items as Record<string, unknown> | undefined;
+          const inner = items ? schemaToYup(items, required) : "yup.mixed()";
+          return `yup.array().of(${inner})`;
+        }
+        if (type === "object") {
+          const props = (schema.properties || {}) as Record<string, Record<string, unknown>>;
+          const req = (schema.required || []) as string[];
+          const fields = Object.entries(props).map(([key, val]) => {
+            const fieldSchema = schemaToYup(val, req);
+            const isRequired = req.includes(key);
+            return `      ${key}: ${isRequired ? fieldSchema : fieldSchema.replace(/\)$/, ".notRequired())")}`;
+          });
+          return `yup.object().shape({\n${fields.join(",\n")}\n    })`;
+        }
+        return "yup.mixed()";
+      }
+      const parsed = parseJson(input) as Record<string, unknown>;
+      const required = (parsed.required || []) as string[];
+      const yupSchema = schemaToYup(parsed, required);
+      return `import * as yup from "yup";\n\nexport const schema = ${yupSchema};`;
+    },
+    faq: [
+      { q: "Which JSON Schema types are supported?", a: "It supports string, number, integer, boolean, array, and object types. Nested schemas are recursively converted." },
+      { q: "How does this differ from JSON Schema to Zod?", a: "The output uses Yup's .shape() for objects and .array().of() for arrays, following Yup's API conventions." },
+    ],
+  },
+  {
+    slug: "json-schema-to-typescript",
+    outputLanguage: "typescript",
+    name: "JSON Schema to TypeScript",
+    description: "Convert a JSON Schema object to a TypeScript interface.",
+    category: "converter",
+    icon: "FileCode2",
+    accent: "purple",
+    inputLabel: "JSON Schema",
+    outputLabel: "TypeScript interface",
+    placeholder: "Paste a JSON Schema object...",
+    sample: '{\n  "type": "object",\n  "properties": {\n    "name": { "type": "string" },\n    "age": { "type": "number" },\n    "active": { "type": "boolean" },\n    "tags": { "type": "array", "items": { "type": "string" } }\n  },\n  "required": ["name", "age"]\n}',
+    actions: [{ id: "run", label: "Convert" }],
+    run: (input: string): string => {
+      function schemaToTS(schema: Record<string, unknown>, required: string[] = [], indent: string = "  "): string {
+        const type = schema.type as string;
+        if (type === "string") return "string";
+        if (type === "number" || type === "integer") return "number";
+        if (type === "boolean") return "boolean";
+        if (type === "array") {
+          const items = schema.items as Record<string, unknown> | undefined;
+          const inner = items ? schemaToTS(items, required, indent) : "unknown";
+          return `${inner}[]`;
+        }
+        if (type === "object") {
+          const props = (schema.properties || {}) as Record<string, Record<string, unknown>>;
+          const req = (schema.required || []) as string[];
+          const fields = Object.entries(props).map(([key, val]) => {
+            const fieldType = schemaToTS(val, req, indent + "  ");
+            const isRequired = req.includes(key);
+            const safeKey = /^[A-Za-z_$][\w$]*$/.test(key) ? key : `"${key}"`;
+            return `${indent}${safeKey}${isRequired ? "" : "?"}: ${fieldType};`;
+          });
+          return `{\n${fields.join("\n")}\n${indent.slice(2)}}`;
+        }
+        return "unknown";
+      }
+      const parsed = parseJson(input) as Record<string, unknown>;
+      const required = (parsed.required || []) as string[];
+      const tsInterface = schemaToTS(parsed, required);
+      return `export interface Root ${tsInterface}\n`;
+    },
+    faq: [
+      { q: "Which JSON Schema types are supported?", a: "It supports string, number, integer, boolean, array, and object types, mapping them to their TypeScript equivalents." },
+      { q: "How are required fields handled?", a: "Required fields are generated without '?', while optional fields get '?' appended to make them optional in the interface." },
+    ],
+  },
+
 ];
 
 export const toolsBySlug = Object.fromEntries(tools.map((t) => [t.slug, t]));

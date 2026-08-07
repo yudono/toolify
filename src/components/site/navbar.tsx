@@ -63,8 +63,7 @@ export function Navbar() {
               All tools
             </Link>
             <Link
-              to="/tools"
-              search={{ category: "all", q: "favorites" }}
+              to="/favorites"
               className="relative inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <Heart className={`size-3.5 ${favorites.length > 0 ? "fill-pink text-pink" : ""}`} />
@@ -130,7 +129,7 @@ export function Navbar() {
               <Link to="/tools" onClick={() => setMobile(false)}>
                 All tools
               </Link>
-              <Link to="/tools" search={{ category: "all", q: "favorites" }} onClick={() => setMobile(false)} className="inline-flex items-center gap-1">
+              <Link to="/favorites" onClick={() => setMobile(false)} className="inline-flex items-center gap-1">
                 <Heart className={`size-3 ${favorites.length > 0 ? "fill-pink text-pink" : ""}`} />
                 Favorites {favorites.length > 0 && `(${favorites.length})`}
               </Link>
