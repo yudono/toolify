@@ -196,7 +196,7 @@ function ToolPage() {
             </div>
           ) : output ? (
             <div className="h-72 w-full rounded-lg overflow-hidden">
-              <CodeEditor value={output} height="100%" />
+              <CodeEditor value={output} language={tool.outputLanguage} height="100%" />
             </div>
           ) : (
             <div className="flex h-72 flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground bg-surface-muted p-6 text-center">
