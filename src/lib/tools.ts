@@ -6879,6 +6879,1893 @@ export const tools: Tool[] = [
     ],
   },
 
+  // ─── Config Generator Tools ────────────────────────
+  {
+    slug: "nginx-config",
+    outputLanguage: "nginx",
+    name: "Nginx Config Generator",
+    description: "Generate a basic Nginx server configuration.",
+    category: "generator",
+    icon: "Server",
+    accent: "green",
+    generator: true,
+    outputLabel: "Nginx config",
+    actions: [{ id: "run", label: "Generate" }],
+    run: (): string => {
+      return `server {
+    listen 80;
+    server_name example.com;
+
+    root /var/www/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    error_page 404 /404.html;
+    error_page 500 502 503 504 /50x.html;
+}`;
+    },
+    faq: [
+      { q: "How do I enable HTTPS?", a: "Add an SSL section with ssl_certificate and ssl_certificate_key directives, and redirect port 80 to 443." },
+      { q: "Can I add gzip compression?", a: "Yes, add a gzip on; directive inside the server or http block." },
+    ],
+  },
+  {
+    slug: "dockerfile",
+    outputLanguage: "dockerfile",
+    name: "Dockerfile Generator",
+    description: "Generate a Dockerfile for Node.js or Python projects.",
+    category: "generator",
+    icon: "Container",
+    accent: "blue",
+    generator: true,
+    outputLabel: "Dockerfile",
+    sample: "node",
+    actions: [{ id: "node", label: "Node.js" }, { id: "python", label: "Python" }],
+    run: (_input: string, action: string): string => {
+      if (action === "python") {
+        return `FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]`;
+      }
+      return `FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "server.js"]`;
+    },
+    faq: [
+      { q: "Why use alpine images?", a: "Alpine images are much smaller, reducing container size and attack surface." },
+      { q: "What about multi-stage builds?", a: "For production, use multi-stage builds to separate build dependencies from runtime." },
+    ],
+  },
+  {
+    slug: "docker-compose",
+    outputLanguage: "yaml",
+    name: "Docker Compose Generator",
+    description: "Generate a docker-compose.yml for common service stacks.",
+    category: "generator",
+    icon: "Container",
+    accent: "blue",
+    generator: true,
+    outputLabel: "docker-compose.yml",
+    sample: "web",
+    actions: [{ id: "web", label: "Web + DB" }, { id: "full", label: "Full Stack" }],
+    run: (_input: string, action: string): string => {
+      if (action === "full") {
+        return `version: "3.8"
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:secret@db:5432/mydb
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: mydb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:`;
+      }
+      return `version: "3.8"
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:secret@db:5432/mydb
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: mydb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:`;
+    },
+    faq: [
+      { q: "How do I add volumes?", a: "Define named volumes at the bottom of the file and reference them in each service's 'volumes' key." },
+      { q: "How do I set up networking?", a: "Services in the same compose file can reach each other by service name automatically." },
+    ],
+  },
+  {
+    slug: "tsconfig-generator",
+    outputLanguage: "json",
+    name: "tsconfig.json Generator",
+    description: "Generate a TypeScript configuration for web, Node.js, or React projects.",
+    category: "generator",
+    icon: "Settings",
+    accent: "blue",
+    generator: true,
+    outputLabel: "tsconfig.json",
+    actions: [{ id: "web", label: "Web" }, { id: "node", label: "Node.js" }, { id: "react", label: "React" }],
+    run: (_input: string, action: string): string => {
+      const base = {
+        compilerOptions: {
+          target: "ES2022",
+          module: "ESNext",
+          lib: ["ES2022", "DOM", "DOM.Iterable"],
+          strict: true,
+          esModuleInterop: true,
+          skipLibCheck: true,
+          forceConsistentCasingInFileNames: true,
+          resolveJsonModule: true,
+          isolatedModules: true,
+          noEmit: true,
+        },
+        include: ["src"],
+      };
+      if (action === "node") {
+        (base.compilerOptions as Record<string, unknown>).module = "NodeNext";
+        (base.compilerOptions as Record<string, unknown>).moduleResolution = "NodeNext";
+        (base.compilerOptions as Record<string, unknown>).lib = ["ES2022"];
+        return JSON.stringify(base, null, 2);
+      }
+      if (action === "react") {
+        (base.compilerOptions as Record<string, unknown>).jsx = "react-jsx";
+        (base.compilerOptions as Record<string, unknown>).moduleResolution = "bundler";
+        (base.compilerOptions as Record<string, unknown>).baseUrl = ".";
+        (base.compilerOptions as Record<string, unknown>).paths = { "@/*": ["./src/*"] };
+        return JSON.stringify(base, null, 2);
+      }
+      (base.compilerOptions as Record<string, unknown>).moduleResolution = "bundler";
+      return JSON.stringify(base, null, 2);
+    },
+    faq: [
+      { q: "What does 'strict' do?", a: "Enables all strict type-checking options: strictNullChecks, noImplicitAny, strictFunctionTypes, etc." },
+      { q: "When should I use 'noEmit'?", a: "Use it when a bundler (Vite, webpack) handles compilation. Set to false if using tsc to output files." },
+    ],
+  },
+  {
+    slug: "eslint-config",
+    outputLanguage: "javascript",
+    name: "ESLint Config Generator",
+    description: "Generate an ESLint flat config for modern JavaScript/TypeScript projects.",
+    category: "generator",
+    icon: "Settings",
+    accent: "green",
+    generator: true,
+    outputLabel: "eslint.config.js",
+    actions: [{ id: "ts", label: "TypeScript" }, { id: "react", label: "React + TS" }],
+    run: (_input: string, action: string): string => {
+      if (action === "react") {
+        return `import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import reactPlugin from "eslint-plugin-react";
+
+export default [
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    plugins: { react: reactPlugin },
+    rules: {
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+    },
+    settings: { react: { version: "detect" } },
+  },
+  { ignores: ["dist/", "node_modules/"] },
+];`;
+      }
+      return `import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+
+export default [
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    rules: {
+      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
+  { ignores: ["dist/", "node_modules/"] },
+];`;
+    },
+    faq: [
+      { q: "What is flat config?", a: "Flat config is the modern ESLint config format using eslint.config.js with native ES modules." },
+      { q: "Do I need a .eslintrc?", a: "No, flat config replaces .eslintrc files. Use eslint.config.js instead." },
+    ],
+  },
+  {
+    slug: "github-actions",
+    outputLanguage: "yaml",
+    name: "GitHub Actions Generator",
+    description: "Generate GitHub Actions workflows for CI/CD pipelines.",
+    category: "generator",
+    icon: "GitBranch",
+    accent: "purple",
+    generator: true,
+    outputLabel: "workflow.yml",
+    sample: "node",
+    actions: [{ id: "node", label: "Node.js CI" }, { id: "deploy", label: "Deploy" }],
+    run: (_input: string, action: string): string => {
+      if (action === "deploy") {
+        return `name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4`;
+      }
+      return `name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: \${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test`;
+    },
+    faq: [
+      { q: "What is a workflow file?", a: "YAML files in .github/workflows/ that define automated processes triggered by GitHub events." },
+      { q: "How do I add caching?", a: "Use actions/cache or the built-in cache option in actions/setup-node with cache: npm." },
+    ],
+  },
+
+  // ─── Formatter Tools ────────────────────────
+  {
+    slug: "html-formatter",
+    outputLanguage: "html",
+    name: "HTML Formatter",
+    description: "Beautify and indent HTML markup.",
+    category: "text",
+    icon: "Code",
+    accent: "orange",
+    outputLabel: "Formatted HTML",
+    placeholder: "Paste HTML to format...",
+    sample: "<div><p>Hello</p><ul><li>Item 1</li><li>Item 2</li></ul></div>",
+    actions: [{ id: "run", label: "Format" }],
+    run: (input: string): string => {
+      let formatted = "";
+      let indent = 0;
+      const tab = "  ";
+      const tags = input.replace(/>\s+</g, ">\n<").split("\n");
+      for (const tag of tags) {
+        const trimmed = tag.trim();
+        if (!trimmed) continue;
+        if (/^<\//.test(trimmed)) indent--;
+        formatted += tab.repeat(Math.max(0, indent)) + trimmed + "\n";
+        if (/^<[^/!][^]*[^/]>$/.test(trimmed) && !/^<(meta|link|img|br|hr|input)/.test(trimmed)) indent++;
+      }
+      return formatted.trimEnd();
+    },
+    faq: [
+      { q: "Does it handle self-closing tags?", a: "Yes, tags like <br>, <img>, and <meta> are recognized and don't increase indentation." },
+      { q: "Can it minify instead?", a: "Use the HTML Minifier tool for the opposite operation." },
+    ],
+  },
+  {
+    slug: "html-minifier",
+    outputLanguage: "html",
+    name: "HTML Minifier",
+    description: "Remove whitespace and comments from HTML.",
+    category: "text",
+    icon: "Minimize2",
+    accent: "orange",
+    outputLabel: "Minified HTML",
+    placeholder: "Paste HTML to minify...",
+    sample: "<div>\n  <p>Hello</p>\n  <!-- comment -->\n</div>",
+    actions: [{ id: "run", label: "Minify" }],
+    run: (input: string): string => {
+      return input
+        .replace(/<!--[\s\S]*?-->/g, "")
+        .replace(/\s+/g, " ")
+        .replace(/>\s+</g, "><")
+        .trim();
+    },
+    faq: [
+      { q: "Is it safe for production?", a: "Yes, removing whitespace and comments reduces file size without affecting rendering." },
+      { q: "Does it handle script and style tags?", a: "Basic minification applies. For critical CSS/JS, use specialized tools." },
+    ],
+  },
+  {
+    slug: "xml-formatter",
+    outputLanguage: "xml",
+    name: "XML Formatter",
+    description: "Pretty-print and indent XML documents.",
+    category: "text",
+    icon: "FileCode",
+    accent: "orange",
+    outputLabel: "Formatted XML",
+    placeholder: "Paste XML to format...",
+    sample: "<root><item id=\"1\"><name>Widget</name><price>9.99</price></item></root>",
+    actions: [{ id: "run", label: "Format" }],
+    run: (input: string): string => {
+      let formatted = "";
+      let indent = 0;
+      const tab = "  ";
+      const nodes = input.replace(/>\s*</g, ">\n<").split("\n");
+      for (const node of nodes) {
+        const trimmed = node.trim();
+        if (!trimmed) continue;
+        if (/^<\//.test(trimmed)) indent--;
+        formatted += tab.repeat(Math.max(0, indent)) + trimmed + "\n";
+        if (/^<[^/!?][^]*[^/]>$/.test(trimmed) && !/\/>$/.test(trimmed)) indent++;
+      }
+      return formatted.trimEnd();
+    },
+    faq: [
+      { q: "Does it handle XML declarations?", a: "Yes, <?xml ... ?> and processing instructions are preserved." },
+      { q: "Can it validate XML?", a: "No, this tool only formats. Use an XML validator for well-formedness checks." },
+    ],
+  },
+  {
+    slug: "yaml-formatter",
+    outputLanguage: "yaml",
+    name: "YAML Formatter",
+    description: "Format and validate YAML documents.",
+    category: "text",
+    icon: "FileText",
+    accent: "orange",
+    outputLabel: "Formatted YAML",
+    placeholder: "Paste YAML to format...",
+    sample: "name: app\nversion: 1.0\ndependencies:\n  react: ^18.0.0\n  next: ^14.0.0",
+    actions: [{ id: "run", label: "Format" }],
+    run: (input: string): string => {
+      const lines = input.split("\n");
+      const formatted: string[] = [];
+      for (const line of lines) {
+        const trimmed = line.replace(/\s+$/, "");
+        if (trimmed === "") {
+          formatted.push("");
+          continue;
+        }
+        const match = trimmed.match(/^(\s*)(.*?):\s*(.*)$/);
+        if (match) {
+          const [, spacing, key, value] = match;
+          const indent = spacing.replace(/\t/g, "  ");
+          if (value === "" || value === "[]") {
+            formatted.push(`${indent}${key}:`);
+          } else if (value.startsWith("[")) {
+            formatted.push(`${indent}${key}: ${value}`);
+          } else {
+            formatted.push(`${indent}${key}: ${value}`);
+          }
+        } else {
+          formatted.push(trimmed);
+        }
+      }
+      return formatted.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
+    },
+    faq: [
+      { q: "Does it fix YAML syntax errors?", a: "No, it normalizes formatting. Invalid YAML will still be invalid after formatting." },
+      { q: "Does it handle multi-line strings?", a: "Basic multi-line indicators (|, >) are preserved but may need manual adjustment." },
+    ],
+  },
+  {
+    slug: "markdown-formatter",
+    outputLanguage: "markdown",
+    name: "Markdown Formatter",
+    description: "Clean up and normalize Markdown formatting.",
+    category: "text",
+    icon: "FileText",
+    accent: "orange",
+    outputLabel: "Formatted Markdown",
+    placeholder: "Paste Markdown to format...",
+    sample: "# Title\n\n## Subtitle\n\nSome text  with   extra   spaces.\n\n- item 1\n-  item 2\n-   item 3",
+    actions: [{ id: "run", label: "Format" }],
+    run: (input: string): string => {
+      let result = input
+        .replace(/[ \t]+$/gm, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .replace(/^(#{1,6})\s+/gm, "$1 ")
+        .replace(/^[-*+]\s+/gm, "- ")
+        .replace(/^\d+\.\s+/gm, (m) => m)
+        .replace(/([^\n])\n([^\n])/g, "$1\n\n$2")
+        .trim();
+      return result;
+    },
+    faq: [
+      { q: "Does it change content?", a: "No, it only normalizes whitespace, list markers, and heading spacing." },
+      { q: "Does it handle tables?", a: "Basic table formatting is preserved. Complex table realignment is not supported." },
+    ],
+  },
+
+  // ─── Text Tools ────────────────────────
+  {
+    slug: "sort-lines",
+    name: "Sort Lines",
+    description: "Sort lines of text alphabetically, reverse, or by length.",
+    category: "text",
+    icon: "ArrowDownAZ",
+    accent: "blue",
+    inputLabel: "Text",
+    outputLabel: "Sorted text",
+    placeholder: "Paste text to sort...",
+    sample: "banana\napple\ncherry\ndate\nelderberry",
+    actions: [{ id: "asc", label: "A→Z" }, { id: "desc", label: "Z→A" }, { id: "length", label: "By Length" }],
+    run: (input: string, action: string): string => {
+      const lines = input.split("\n");
+      if (action === "length") return lines.sort((a, b) => a.length - b.length).join("\n");
+      if (action === "desc") return lines.sort().reverse().join("\n");
+      return lines.sort().join("\n");
+    },
+    faq: [
+      { q: "Does it sort case-sensitively?", a: "Yes, uppercase letters sort before lowercase in standard sort. Use a case-insensitive editor for different behavior." },
+      { q: "Can I sort numbers?", a: "Not with this tool. Use the JSON Sort tool for numeric sorting." },
+    ],
+  },
+  {
+    slug: "unique-lines",
+    name: "Unique Lines",
+    description: "Remove duplicate lines from text.",
+    category: "text",
+    icon: "Copy",
+    accent: "blue",
+    inputLabel: "Text",
+    outputLabel: "Unique lines",
+    placeholder: "Paste text with duplicates...",
+    sample: "apple\nbanana\napple\ncherry\nbanana\ndate",
+    actions: [{ id: "run", label: "Remove Duplicates" }],
+    run: (input: string): string => {
+      return [...new Set(input.split("\n"))].join("\n");
+    },
+    faq: [
+      { q: "Is it case-sensitive?", a: "Yes, 'Apple' and 'apple' are treated as different lines." },
+      { q: "Does it preserve order?", a: "Yes, the first occurrence of each line is kept." },
+    ],
+  },
+  {
+    slug: "char-counter",
+    name: "Character Counter",
+    description: "Count characters, words, lines, and bytes in text.",
+    category: "text",
+    icon: "Hash",
+    accent: "blue",
+    inputLabel: "Text",
+    outputLabel: "Counts",
+    placeholder: "Paste text to count...",
+    sample: "Hello, World!\nThis is a sample text.\nIt has multiple lines.",
+    actions: [{ id: "run", label: "Count" }],
+    run: (input: string): string => {
+      const chars = input.length;
+      const words = input.trim() ? input.trim().split(/\s+/).length : 0;
+      const lines = input.split("\n").length;
+      const bytes = new TextEncoder().encode(input).length;
+      const sentences = input.split(/[.!?]+/).filter((s) => s.trim()).length;
+      const paragraphs = input.split(/\n\s*\n/).filter((p) => p.trim()).length;
+      return `Characters: ${chars}\nWords: ${words}\nLines: ${lines}\nSentences: ${sentences}\nParagraphs: ${paragraphs}\nBytes (UTF-8): ${bytes}`;
+    },
+    faq: [
+      { q: "What counts as a word?", a: "Words are separated by whitespace. Contractions and hyphenated words count as single words." },
+      { q: "Does it handle Unicode?", a: "Yes, characters are counted as Unicode code points. Bytes reflect UTF-8 encoding." },
+    ],
+  },
+
+  // ─── Date Tools ────────────────────────
+  {
+    slug: "timezone-converter",
+    name: "Timezone Converter",
+    description: "Convert a date/time between timezones.",
+    category: "date",
+    icon: "Globe",
+    accent: "yellow",
+    inputLabel: "Date/time",
+    outputLabel: "Converted time",
+    placeholder: "2025-01-15 14:30",
+    sample: "2025-01-15 14:30",
+    actions: [
+      { id: "utc-to-est", label: "UTC → EST" },
+      { id: "utc-to-pst", label: "UTC → PST" },
+      { id: "utc-to-ist", label: "UTC → IST" },
+      { id: "utc-to-jst", label: "UTC → JST" },
+      { id: "est-to-utc", label: "EST → UTC" },
+      { id: "pst-to-utc", label: "PST → UTC" },
+    ],
+    run: (input: string, action: string): string => {
+      const offsets: Record<string, number> = {
+        "utc-to-est": -5, "utc-to-pst": -8, "utc-to-ist": 5.5, "utc-to-jst": 9,
+        "est-to-utc": 5, "pst-to-utc": 8,
+      };
+      const offset = offsets[action] ?? 0;
+      const date = new Date(input.replace(" ", "T") + "Z");
+      if (isNaN(date.getTime())) return "Invalid date format. Use YYYY-MM-DD HH:MM.";
+      date.setHours(date.getHours() + offset);
+      const [d, t] = date.toISOString().replace("T", " ").slice(0, 16).split(" ");
+      const zones: Record<string, string> = {
+        "utc-to-est": "EST", "utc-to-pst": "PST", "utc-to-ist": "IST",
+        "utc-to-jst": "JST", "est-to-utc": "UTC", "pst-to-utc": "UTC",
+      };
+      return `${d} ${t} ${zones[action] ?? ""}`;
+    },
+    faq: [
+      { q: "Does it handle DST?", a: "Simple offset-based conversion is used. For DST-aware conversion, use a dedicated timezone library." },
+      { q: "What date formats are accepted?", a: "YYYY-MM-DD HH:MM format. The input is treated as UTC." },
+    ],
+  },
+  {
+    slug: "date-difference",
+    name: "Date Difference",
+    description: "Calculate the difference between two dates in days, hours, or minutes.",
+    category: "date",
+    icon: "CalendarDays",
+    accent: "yellow",
+    inputLabel: "Date range",
+    outputLabel: "Difference",
+    placeholder: "2025-01-01\n2025-03-15",
+    sample: "2025-01-01\n2025-03-15",
+    actions: [{ id: "run", label: "Calculate" }],
+    run: (input: string): string => {
+      const lines = input.trim().split("\n").map((l) => l.trim()).filter(Boolean);
+      if (lines.length < 2) return "Enter two dates, one per line (YYYY-MM-DD).";
+      const d1 = new Date(lines[0]);
+      const d2 = new Date(lines[1]);
+      if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return "Invalid date(s). Use YYYY-MM-DD format.";
+      const diff = Math.abs(d2.getTime() - d1.getTime());
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const weeks = Math.floor(days / 7);
+      const months = Math.floor(days / 30.44);
+      return `Days: ${days}\nHours: ${hours}\nMinutes: ${minutes}\nWeeks: ${weeks}\nMonths (approx): ${months}`;
+    },
+    faq: [
+      { q: "Does it account for timezones?", a: "No, dates are parsed as local dates. Times are not considered." },
+      { q: "Can I include times?", a: "Use YYYY-MM-DD HH:MM format for both dates to include time precision." },
+    ],
+  },
+  {
+    slug: "cron-generator",
+    name: "Cron Expression Generator",
+    description: "Generate cron expressions from plain English descriptions.",
+    category: "date",
+    icon: "Clock",
+    accent: "yellow",
+    inputLabel: "Schedule",
+    outputLabel: "Cron expression",
+    placeholder: "every day at 9am",
+    sample: "every day at 9am",
+    actions: [{ id: "run", label: "Generate" }],
+    run: (input: string): string => {
+      const lower = input.toLowerCase().trim();
+      if (/every minute/.test(lower)) return "* * * * *";
+      if (/every hour/.test(lower)) return "0 * * * *";
+      if (/every day at (\d+)(am|pm)/.test(lower)) {
+        const m = lower.match(/every day at (\d+)(am|pm)/);
+        if (m) {
+          let h = parseInt(m[1]);
+          if (m[2] === "pm" && h < 12) h += 12;
+          if (m[2] === "am" && h === 12) h = 0;
+          return `${h} * * * *`;
+        }
+      }
+      if (/every (\w+day) at (\d+)(am|pm)/.test(lower)) {
+        const m = lower.match(/every (\w+day) at (\d+)(am|pm)/);
+        if (m) {
+          const days: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 };
+          let h = parseInt(m[2]);
+          if (m[3] === "pm" && h < 12) h += 12;
+          if (m[3] === "am" && h === 12) h = 0;
+          return `0 ${h} * * ${days[m[1]] ?? "*"}`;
+        }
+      }
+      if (/every (\d+) minutes/.test(lower)) {
+        const m = lower.match(/every (\d+) minutes/);
+        if (m) return `*/${m[1]} * * * *`;
+      }
+      if (/every (\d+) hours/.test(lower)) {
+        const m = lower.match(/every (\d+) hours/);
+        if (m) return `0 */${m[1]} * * *`;
+      }
+      return "# Could not parse. Examples:\n# every minute → * * * * *\n# every day at 9am → 0 9 * * *\n# every monday at 5pm → 0 17 * * 1\n# every 15 minutes → */15 * * * *";
+    },
+    faq: [
+      { q: "What cron format is used?", a: "Standard 5-field cron: minute hour day-of-month month day-of-week." },
+      { q: "Does it support complex schedules?", a: "Basic schedules work. For complex ones, use crontab.guru directly." },
+    ],
+  },
+
+  // ─── React/TypeScript Code Generators ────────────────────────
+  {
+    slug: "react-component",
+    outputLanguage: "typescript",
+    name: "React Component Generator",
+    description: "Generate a React functional component with TypeScript.",
+    category: "generator",
+    icon: "Component",
+    accent: "cyan",
+    generator: true,
+    outputLabel: "Component TSX",
+    sample: "UserProfile",
+    actions: [{ id: "fc", label: "FC + Props" }, { id: "simple", label: "Simple" }],
+    run: (input: string, action: string): string => {
+      const name = input.trim() || "MyComponent";
+      if (action === "simple") {
+        return `export function ${name}() {
+  return (
+    <div>
+      <h1>${name}</h1>
+    </div>
+  );
+}`;
+      }
+      return `interface ${name}Props {
+  name: string;
+  children?: React.ReactNode;
+}
+
+export function ${name}({ name, children }: ${name}Props) {
+  return (
+    <div className="${name.toLowerCase()}">
+      <h1>{name}</h1>
+      {children}
+    </div>
+  );
+}`;
+    },
+    faq: [
+      { q: "Why not use React.FC?", a: "React.FC is deprecated for most use cases. Plain function components with explicit props are preferred." },
+      { q: "Can it generate class components?", a: "No, functional components with hooks are the modern standard." },
+    ],
+  },
+  {
+    slug: "react-hook",
+    outputLanguage: "typescript",
+    name: "React Hook Generator",
+    description: "Generate a custom React hook with TypeScript.",
+    category: "generator",
+    icon: "Hook",
+    accent: "cyan",
+    generator: true,
+    outputLabel: "Hook TS",
+    sample: "useLocalStorage",
+    actions: [{ id: "state", label: "State Hook" }, { id: "fetch", label: "Fetch Hook" }],
+    run: (input: string, action: string): string => {
+      const name = input.trim() || "useMyHook";
+      if (action === "fetch") {
+        return `import { useState, useEffect } from "react";
+
+interface UseFetchResult<T> {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+}
+
+export function useFetch<T>(url: string): UseFetchResult<T> {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(url)
+      .then((res) => {
+        if (!res.ok) throw new Error(res.statusText);
+        return res.json();
+      })
+      .then((json) => { if (!cancelled) setData(json); })
+      .catch((err) => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [url]);
+
+  return { data, loading, error };
+}`;
+      }
+      return `import { useState, useCallback } from "react";
+
+export function ${name}<T>(key: string, initialValue: T) {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const stored = localStorage.getItem(key);
+      return stored ? (JSON.parse(stored) as T) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  const setStoredValue = useCallback(
+    (newValue: T | ((prev: T) => T)) => {
+      setValue((prev) => {
+        const next = typeof newValue === "function" ? (newValue as (prev: T) => T)(prev) : newValue;
+        localStorage.setItem(key, JSON.stringify(next));
+        return next;
+      });
+    },
+    [key]
+  );
+
+  return [value, setStoredValue] as const;
+}`;
+    },
+    faq: [
+      { q: "Why use useCallback?", a: "It memoizes the setter function to prevent unnecessary re-renders of consuming components." },
+      { q: "Can I add more features?", a: "Yes, extend with useEffect for sync, useMemo for derived state, or useReducer for complex logic." },
+    ],
+  },
+  {
+    slug: "typescript-interface",
+    outputLanguage: "typescript",
+    name: "TypeScript Interface Generator",
+    description: "Generate TypeScript interfaces from JSON or text descriptions.",
+    category: "generator",
+    icon: "FileCode",
+    accent: "cyan",
+    generator: true,
+    outputLabel: "Interface",
+    sample: '{\n  "name": "John",\n  "age": 30,\n  "email": "john@example.com",\n  "isActive": true,\n  "tags": ["admin", "user"]\n}',
+    actions: [{ id: "run", label: "Generate" }],
+    run: (input: string): string => {
+      try {
+        const obj = JSON.parse(input);
+        function inferType(val: unknown): string {
+          if (val === null) return "null";
+          if (Array.isArray(val)) {
+            if (val.length === 0) return "unknown[]";
+            return `${inferType(val[0])}[]`;
+          }
+          return typeof val;
+        }
+        const lines = Object.entries(obj).map(([key, val]) => {
+          const safeKey = /^[A-Za-z_$][\w$]*$/.test(key) ? key : `"${key}"`;
+          return `  ${safeKey}: ${inferType(val)};`;
+        });
+        return `interface Data {\n${lines.join("\n")}\n}`;
+      } catch {
+        return "// Invalid JSON input";
+      }
+    },
+    faq: [
+      { q: "How accurate is type inference?", a: "Basic types (string, number, boolean, array) are inferred. Complex nested objects generate inline types." },
+      { q: "Can it infer from API responses?", a: "Yes, paste any JSON and it will generate a matching interface." },
+    ],
+  },
+  {
+    slug: "solid-component",
+    outputLanguage: "typescript",
+    name: "SolidJS Component Generator",
+    description: "Generate a SolidJS component with TypeScript.",
+    category: "generator",
+    icon: "Zap",
+    accent: "cyan",
+    generator: true,
+    outputLabel: "SolidJS TSX",
+    sample: "Card",
+    actions: [{ id: "run", label: "Generate" }],
+    run: (input: string): string => {
+      const name = input.trim() || "MyComponent";
+      return `import { Component, createSignal } from "solid-js";
+
+interface ${name}Props {
+  title: string;
+}
+
+export const ${name}: Component<${name}Props> = (props) => {
+  const [count, setCount] = createSignal(0);
+
+  return (
+    <div class="${name.toLowerCase()}">
+      <h2>{props.title}</h2>
+      <p>Count: {count()}</p>
+      <button onClick={() => setCount((c) => c + 1)}>Increment</button>
+    </div>
+  );
+};`;
+    },
+    faq: [
+      { q: "How is SolidJS different from React?", a: "SolidJS uses fine-grained reactivity without a virtual DOM. Components run once, and signals handle updates." },
+      { q: "Do I need JSX config?", a: "Yes, configure your build tool for SolidJS JSX transform." },
+    ],
+  },
+
+  // ─── CSS Generators ────────────────────────
+  {
+    slug: "css-grid",
+    outputLanguage: "css",
+    name: "CSS Grid Generator",
+    description: "Generate CSS Grid layouts from visual parameters.",
+    category: "css",
+    icon: "LayoutGrid",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Grid",
+    sample: "3",
+    actions: [{ id: "auto", label: "Auto Fill" }, { id: "fixed", label: "Fixed Columns" }],
+    run: (input: string, action: string): string => {
+      const cols = parseInt(input) || 3;
+      if (action === "fixed") {
+        return `.grid-container {
+  display: grid;
+  grid-template-columns: repeat(${cols}, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.grid-item {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 1.5rem;
+}`;
+      }
+      return `.grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.grid-item {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 1.5rem;
+}`;
+    },
+    faq: [
+      { q: "When should I use auto-fill vs fixed?", a: "auto-fill is responsive and adapts to screen size. Fixed is better when you need exact column counts." },
+      { q: "How do I add responsiveness?", a: "Use media queries to change grid-template-columns at different breakpoints." },
+    ],
+  },
+  {
+    slug: "css-flexbox",
+    outputLanguage: "css",
+    name: "CSS Flexbox Generator",
+    description: "Generate CSS Flexbox layouts with common patterns.",
+    category: "css",
+    icon: "AlignHorizontalSpaceAround",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Flexbox",
+    sample: "center",
+    actions: [
+      { id: "center", label: "Center" },
+      { id: "between", label: "Space Between" },
+      { id: "column", label: "Column" },
+      { id: "wrap", label: "Wrap" },
+    ],
+    run: (_input: string, action: string): string => {
+      const layouts: Record<string, string> = {
+        center: `.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}`,
+        between: `.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}`,
+        column: `.flex-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}`,
+        wrap: `.flex-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.flex-wrap > * {
+  flex: 1 1 200px;
+}`,
+      };
+      return layouts[action] ?? layouts.center;
+    },
+    faq: [
+      { q: "When should I use Flexbox vs Grid?", a: "Flexbox for one-dimensional layouts (row or column). Grid for two-dimensional layouts (rows and columns)." },
+      { q: "How do I center vertically?", a: "Use align-items: center on a flex container with a defined height, or use the margin: auto trick on the child." },
+    ],
+  },
+  {
+    slug: "css-gradient",
+    outputLanguage: "css",
+    name: "CSS Gradient Generator",
+    description: "Generate linear, radial, and conic CSS gradients.",
+    category: "css",
+    icon: "Palette",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Gradient",
+    sample: "linear",
+    actions: [
+      { id: "linear", label: "Linear" },
+      { id: "radial", label: "Radial" },
+      { id: "conic", label: "Conic" },
+      { id: "sunset", label: "Sunset" },
+      { id: "ocean", label: "Ocean" },
+    ],
+    run: (_input: string, action: string): string => {
+      const gradients: Record<string, string> = {
+        linear: `.gradient-linear {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 200px;
+  border-radius: 8px;
+}`,
+        radial: `.gradient-radial {
+  background: radial-gradient(circle, #667eea 0%, #764ba2 100%);
+  min-height: 200px;
+  border-radius: 8px;
+}`,
+        conic: `.gradient-conic {
+  background: conic-gradient(from 0deg, #667eea, #764ba2, #f093fb, #667eea);
+  min-height: 200px;
+  border-radius: 8px;
+}`,
+        sunset: `.gradient-sunset {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 50%, #fa709a 100%);
+  min-height: 200px;
+  border-radius: 8px;
+}`,
+        ocean: `.gradient-ocean {
+  background: linear-gradient(135deg, #667eea 0%, #00d2ff 100%);
+  min-height: 200px;
+  border-radius: 8px;
+}`,
+      };
+      return gradients[action] ?? gradients.linear;
+    },
+    faq: [
+      { q: "How do I animate a gradient?", a: "Use @keyframes with background-position animation on a larger-than-element background." },
+      { q: "Are conic gradients well supported?", a: "Yes, supported in all modern browsers. Not supported in IE." },
+    ],
+  },
+  {
+    slug: "css-animation",
+    outputLanguage: "css",
+    name: "CSS Animation Generator",
+    description: "Generate common CSS animations and keyframes.",
+    category: "css",
+    icon: "Play",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Animation",
+    actions: [
+      { id: "fade", label: "Fade In" },
+      { id: "slide", label: "Slide Up" },
+      { id: "bounce", label: "Bounce" },
+      { id: "spin", label: "Spin" },
+      { id: "pulse", label: "Pulse" },
+    ],
+    run: (_input: string, action: string): string => {
+      const animations: Record<string, string> = {
+        fade: `.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}`,
+        slide: `.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}`,
+        bounce: `.bounce {
+  animation: bounce 0.6s ease;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}`,
+        spin: `.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}`,
+        pulse: `.pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}`,
+      };
+      return animations[action] ?? animations.fade;
+    },
+    faq: [
+      { q: "How do I reduce motion for accessibility?", a: "Use @media (prefers-reduced-motion: reduce) to disable or simplify animations." },
+      { q: "Can I chain animations?", a: "Yes, use animation-delay and animation-fill-mode for sequenced effects." },
+    ],
+  },
+
+  // ─── Missing Tools (cURL→Dart, TS generators, CSS, Image) ────────────────────────
+  {
+    slug: "curl-to-dart",
+    outputLanguage: "dart",
+    name: "cURL → Dart",
+    description: "Convert cURL commands to Dart http package code.",
+    category: "converter",
+    icon: "ArrowRightLeft",
+    accent: "purple",
+    inputLabel: "cURL command",
+    outputLabel: "Dart code",
+    placeholder: "Paste a cURL command...",
+    sample: 'curl -X POST https://api.example.com/users \\\n  -H "Content-Type: application/json" \\\n  -d \'{"name":"John","email":"john@example.com"}\'',
+    actions: [{ id: "run", label: "Convert" }],
+    run: (input: string): string => {
+      const urlMatch = input.match(/curl\s+['"]?(https?:\/\/[^\s'"]+)['"]?/i);
+      const url = urlMatch ? urlMatch[1] : "https://api.example.com";
+      const methodMatch = input.match(/-X\s+(\w+)/i);
+      const method = methodMatch ? methodMatch[1].toUpperCase() : "GET";
+      const headers: Record<string, string> = {};
+      const headerRegex = /-H\s+['"]([^'"]+)['"]/gi;
+      let m;
+      while ((m = headerRegex.exec(input)) !== null) {
+        const [key, ...rest] = m[1].split(":");
+        headers[key.trim()] = rest.join(":").trim();
+      }
+      const bodyMatch = input.match(/-d\s+['"](.+?)['"]/s);
+      const headerLines = Object.entries(headers).map(([k, v]) => `    '${k}': '${v}',`).join("\n");
+      let code = `import 'package:http/http.dart' as http;\nimport 'dart:convert';\n\n`;
+      code += `final response = await http.${method.toLowerCase()}(\n  Uri.parse('$url'),\n  headers: {\n${headerLines}\n  },\n`;
+      if (bodyMatch) {
+        code += `  body: jsonEncode(${bodyMatch[1]}),\n`;
+      }
+      code += `);\n\nprint(response.body);`;
+      return code;
+    },
+    faq: [
+      { q: "What Dart HTTP library is used?", a: "The official 'package:http' package, which is the standard for Dart HTTP requests." },
+      { q: "Does it handle cookies?", a: "Basic cookies can be added manually. For complex cookie handling, use 'package:dio' with interceptors." },
+    ],
+  },
+  {
+    slug: "mock-data-generator",
+    outputLanguage: "typescript",
+    name: "Mock Data Generator",
+    description: "Generate realistic mock data from a JSON schema or type description.",
+    category: "generator",
+    icon: "Database",
+    accent: "cyan",
+    generator: true,
+    outputLabel: "Mock data",
+    sample: '{\n  "name": "string",\n  "age": "number",\n  "email": "email",\n  "active": "boolean",\n  "tags": "string[]"\n}',
+    actions: [{ id: "run", label: "Generate" }],
+    run: (input: string): string => {
+      const names = ["Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace", "Henry"];
+      const domains = ["example.com", "test.org", "demo.io"];
+      const adjectives = ["new", "old", "big", "small", "fast", "slow"];
+      const nouns = ["task", "project", "item", "feature", "bug", "report"];
+      function randItem<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+      function genValue(type: string): unknown {
+        switch (type) {
+          case "string": return randItem(adjectives) + "-" + randItem(nouns);
+          case "number": return Math.floor(Math.random() * 100);
+          case "boolean": return Math.random() > 0.5;
+          case "email": return randItem(names).toLowerCase() + "@" + randItem(domains);
+          case "date": return new Date(Date.now() - Math.random() * 365 * 86400000).toISOString().slice(0, 10);
+          case "string[]": return [randItem(adjectives), randItem(nouns)];
+          case "number[]": return Array.from({ length: 3 }, () => Math.floor(Math.random() * 100));
+          default: return null;
+        }
+      }
+      try {
+        const schema = JSON.parse(input);
+        const records = Array.from({ length: 3 }, () => {
+          const obj: Record<string, unknown> = {};
+          for (const [key, val] of Object.entries(schema)) {
+            obj[key] = genValue(val as string);
+          }
+          return obj;
+        });
+        return JSON.stringify(records, null, 2);
+      } catch {
+        return "// Invalid JSON. Use format: { \"field\": \"type\" }\n// Supported types: string, number, boolean, email, date, string[], number[]";
+      }
+    },
+    faq: [
+      { q: "What types are supported?", a: "string, number, boolean, email, date, string[], number[]. You can extend genValue for custom types." },
+      { q: "Is the data deterministic?", a: "No, it's randomized. For seeded data, use a library like Faker.js." },
+    ],
+  },
+  {
+    slug: "ts-enum-generator",
+    outputLanguage: "typescript",
+    name: "TypeScript Enum Generator",
+    description: "Generate TypeScript enums from a list of values or JSON.",
+    category: "generator",
+    icon: "List",
+    accent: "cyan",
+    generator: true,
+    outputLabel: "TS Enum",
+    sample: "ADMIN\nUSER\nGUEST",
+    actions: [{ id: "enum", label: "Enum" }, { id: "const", label: "Const Enum" }, { id: "union", label: "Union Type" }],
+    run: (input: string, action: string): string => {
+      const values = input.split("\n").map((l) => l.trim()).filter(Boolean);
+      if (action === "union") {
+        const parts = values.map((v) => `  "${v}"`).join(" | \n");
+        return `type Role =\n${parts};\n\nconst roles: Role[] = [\n${values.map((v) => `  "${v}",`).join("\n")}\n];`;
+      }
+      if (action === "const") {
+        const lines = values.map((v) => `  ${v.toUpperCase()} = "${v}",`).join("\n");
+        return `const enum Role {\n${lines}\n}`;
+      }
+      const lines = values.map((v) => `  ${v.toUpperCase()} = "${v}",`).join("\n");
+      return `enum Role {\n${lines}\n}`;
+    },
+    faq: [
+      { q: "Enum vs Const Enum?", a: "Regular enums generate runtime objects. Const enums are inlined at compile time and don't exist at runtime." },
+      { q: "When to use union types?", a: "Union types are simpler and work better with type narrowing. Use enums when you need runtime values." },
+    ],
+  },
+  {
+    slug: "box-shadow-generator",
+    outputLanguage: "css",
+    name: "Box Shadow Generator",
+    description: "Generate CSS box shadows with visual presets.",
+    category: "css",
+    icon: "Square",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Box Shadow",
+    actions: [
+      { id: "subtle", label: "Subtle" },
+      { id: "medium", label: "Medium" },
+      { id: "large", label: "Large" },
+      { id: "neon", label: "Neon Glow" },
+      { id: "inset", label: "Inset" },
+    ],
+    run: (_input: string, action: string): string => {
+      const shadows: Record<string, string> = {
+        subtle: `.box-shadow {\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.06);\n}`,
+        medium: `.box-shadow {\n  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);\n}`,
+        large: `.box-shadow {\n  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.05);\n}`,
+        neon: `.box-shadow {\n  box-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #00ff88, 0 0 40px #00ff88;\n}`,
+        inset: `.box-shadow {\n  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);\n}`,
+      };
+      return shadows[action] ?? shadows.medium;
+    },
+    faq: [
+      { q: "How do I animate box shadows?", a: "Use CSS transitions on the box-shadow property for smooth shadow animations." },
+      { q: "Are multiple shadows supported?", a: "Yes, comma-separate multiple shadow values for layered effects." },
+    ],
+  },
+  {
+    slug: "glassmorphism-generator",
+    outputLanguage: "css",
+    name: "Glassmorphism Generator",
+    description: "Generate glassmorphism (frosted glass) CSS effects.",
+    category: "css",
+    icon: "Sparkles",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Glassmorphism",
+    actions: [{ id: "light", label: "Light" }, { id: "dark", label: "Dark" }, { id: "color", label: "Colored" }],
+    run: (_input: string, action: string): string => {
+      const styles: Record<string, string> = {
+        light: `.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 2rem;
+}`,
+        dark: `.glass-dark {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+  color: white;
+}`,
+        color: `.glass-color {
+  background: rgba(99, 102, 241, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 16px;
+  padding: 2rem;
+}`,
+      };
+      return styles[action] ?? styles.light;
+    },
+    faq: [
+      { q: "Does backdrop-filter work everywhere?", a: "Supported in all modern browsers. Add -webkit- prefix for Safari compatibility." },
+      { q: "How do I add a background image?", a: "Use a container with a gradient or image background behind the glass element." },
+    ],
+  },
+  {
+    slug: "border-radius-generator",
+    outputLanguage: "css",
+    name: "Border Radius Generator",
+    description: "Generate CSS border-radius values with common patterns.",
+    category: "css",
+    icon: "Circle",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Border Radius",
+    actions: [
+      { id: "small", label: "Small (4px)" },
+      { id: "medium", label: "Medium (8px)" },
+      { id: "large", label: "Large (16px)" },
+      { id: "pill", label: "Pill" },
+      { id: "circle", label: "Circle" },
+    ],
+    run: (_input: string, action: string): string => {
+      const styles: Record<string, string> = {
+        small: `.rounded-sm { border-radius: 4px; }`,
+        medium: `.rounded-md { border-radius: 8px; }`,
+        large: `.rounded-lg { border-radius: 16px; }`,
+        pill: `.rounded-pill {\n  border-radius: 9999px;\n  padding: 0.5rem 1.5rem;\n}`,
+        circle: `.rounded-full {\n  width: 80px;\n  height: 80px;\n  border-radius: 50%;\n}`,
+      };
+      return styles[action] ?? styles.medium;
+    },
+    faq: [
+      { q: "How do different corners?", a: "Use border-radius: topLeft topRight bottomRight bottomLeft; for individual corners." },
+      { q: "Can I use percentages?", a: "Yes, percentage values create elliptical corners. 50% on a square makes a circle." },
+    ],
+  },
+  {
+    slug: "clip-path-generator",
+    outputLanguage: "css",
+    name: "CSS Clip Path Generator",
+    description: "Generate CSS clip-path shapes for element masking.",
+    category: "css",
+    icon: "Scissors",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Clip Path",
+    actions: [
+      { id: "triangle", label: "Triangle" },
+      { id: "circle", label: "Circle" },
+      { id: "hexagon", label: "Hexagon" },
+      { id: "diamond", label: "Diamond" },
+      { id: "star", label: "Star" },
+      { id: "arch", label: "Arch" },
+    ],
+    run: (_input: string, action: string): string => {
+      const shapes: Record<string, string> = {
+        triangle: `.clip-triangle {\n  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);\n}`,
+        circle: `.clip-circle {\n  clip-path: circle(50% at 50% 50%);\n}`,
+        hexagon: `.clip-hexagon {\n  clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);\n}`,
+        diamond: `.clip-diamond {\n  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);\n}`,
+        star: `.clip-star {\n  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);\n}`,
+        arch: `.clip-arch {\n  clip-path: ellipse(50% 60% at 50% 60%);\n}`,
+      };
+      return shapes[action] ?? shapes.triangle;
+    },
+    faq: [
+      { q: "Does clip-path work with transitions?", a: "Yes, clip-path supports CSS transitions for smooth shape morphing effects." },
+      { q: "Can I use images inside clip-path?", a: "Yes, clip-path masks the element including its background and content." },
+    ],
+  },
+  {
+    slug: "css-filter-generator",
+    outputLanguage: "css",
+    name: "CSS Filter Generator",
+    description: "Generate CSS filter effects like blur, brightness, and contrast.",
+    category: "css",
+    icon: "SlidersHorizontal",
+    accent: "pink",
+    generator: true,
+    outputLabel: "CSS Filter",
+    actions: [
+      { id: "blur", label: "Blur" },
+      { id: "brightness", label: "Brightness" },
+      { id: "grayscale", label: "Grayscale" },
+      { id: "sepia", label: "Sepia" },
+      { id: "contrast", label: "High Contrast" },
+      { id: "vintage", label: "Vintage" },
+    ],
+    run: (_input: string, action: string): string => {
+      const filters: Record<string, string> = {
+        blur: `.filter-blur {\n  filter: blur(4px);\n}`,
+        brightness: `.filter-brightness {\n  filter: brightness(1.2);\n}`,
+        grayscale: `.filter-grayscale {\n  filter: grayscale(100%);\n}`,
+        sepia: `.filter-sepia {\n  filter: sepia(80%) saturate(120%);\n}`,
+        contrast: `.filter-contrast {\n  filter: contrast(150%);\n}`,
+        vintage: `.filter-vintage {\n  filter: sepia(40%) saturate(140%) contrast(90%) brightness(110%);\n}`,
+      };
+      return filters[action] ?? filters.blur;
+    },
+    faq: [
+      { q: "How do I combine filters?", a: "Chain multiple filter functions: filter: blur(2px) brightness(1.1) grayscale(50%);" },
+      { q: "Can I animate filters?", a: "Yes, most filter functions support CSS transitions for smooth effects." },
+    ],
+  },
+  {
+    slug: "image-compress",
+    outputLanguage: "html",
+    name: "Image Compressor",
+    description: "Reduce image file size while maintaining quality.",
+    category: "image",
+    icon: "Minimize2",
+    accent: "red",
+    generator: true,
+    outputLabel: "Compression tips",
+    actions: [{ id: "run", label: "Get Tips" }],
+    run: (): string => `Image compression is a client-side operation. Here's how to compress in the browser:
+
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+img.onload = () => {
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img, 0, 0);
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "compressed.jpg";
+    a.click();
+  }, "image/jpeg", 0.7); // 0.7 = 70% quality
+};
+img.src = "your-image.jpg";
+
+// Tips:
+// - JPEG for photos (lossy, small files)
+// - PNG for graphics (lossless, larger)
+// - WebP for best compression (25-35% smaller)
+// - AVIF for modern browsers (50% smaller than JPEG)
+// - Reduce dimensions: 1920px wide is usually enough
+// - Use tools: TinyPNG, Squoosh, or Sharp (Node.js)`,
+    faq: [
+      { q: "What's the best format for photos?", a: "JPEG at 70-80% quality, or WebP/AVIF for 25-50% smaller files with similar quality." },
+      { q: "How do I resize before compressing?", a: "Set canvas.width and canvas.height to your target dimensions before drawImage." },
+    ],
+  },
+  {
+    slug: "image-resize",
+    outputLanguage: "html",
+    name: "Image Resizer",
+    description: "Resize images to specific dimensions in the browser.",
+    category: "image",
+    icon: "Maximize",
+    accent: "red",
+    generator: true,
+    outputLabel: "Resize code",
+    sample: "800",
+    actions: [{ id: "run", label: "Generate Code" }],
+    run: (input: string): string => {
+      const width = parseInt(input) || 800;
+      return `// Resize image to ${width}px width (maintain aspect ratio)
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+img.crossOrigin = "anonymous";
+
+img.onload = () => {
+  const ratio = ${width} / img.width;
+  canvas.width = ${width};
+  canvas.height = img.height * ratio;
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "resized-${width}.png";
+    a.click();
+  }, "image/png");
+};
+
+img.src = "your-image.jpg";`;
+    },
+    faq: [
+      { q: "Does it maintain aspect ratio?", a: "Yes, the ratio is calculated from the original dimensions." },
+      { q: "What if I need exact dimensions?", a: "Set both canvas.width and canvas.height, but the image may be stretched." },
+    ],
+  },
+  {
+    slug: "image-crop",
+    outputLanguage: "html",
+    name: "Image Cropper",
+    description: "Crop images to a specific region in the browser.",
+    category: "image",
+    icon: "Crop",
+    accent: "red",
+    generator: true,
+    outputLabel: "Crop code",
+    actions: [{ id: "run", label: "Generate Code" }],
+    run: (): string => `// Crop image to a specific region
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+
+img.onload = () => {
+  // Crop region: x, y, width, height (in pixels)
+  const cropX = 100;
+  const cropY = 50;
+  const cropWidth = 400;
+  const cropHeight = 300;
+  
+  canvas.width = cropWidth;
+  canvas.height = cropHeight;
+  ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+  
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cropped.png";
+    a.click();
+  }, "image/png");
+};
+
+img.src = "your-image.jpg";
+
+// For interactive cropping, use:
+// - Cropper.js: https://cropperjs.github.io/
+// - react-image-crop: https://github.com/DominicTobias/react-image-crop`,
+    faq: [
+      { q: "How do I find crop coordinates?", a: "Use an image editor or a library like Cropper.js for visual selection." },
+      { q: "Can I crop to a circle?", a: "Use ctx.beginPath() + ctx.arc() + ctx.clip() before drawImage for circular crops." },
+    ],
+  },
+  {
+    slug: "image-rotate",
+    outputLanguage: "html",
+    name: "Image Rotator",
+    description: "Rotate images by any angle in the browser.",
+    category: "image",
+    icon: "RotateCw",
+    accent: "red",
+    generator: true,
+    outputLabel: "Rotate code",
+    sample: "90",
+    actions: [{ id: "run", label: "Generate Code" }],
+    run: (input: string): string => {
+      const angle = parseInt(input) || 90;
+      return `// Rotate image by ${angle} degrees
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+
+img.onload = () => {
+  const rad = ${angle} * Math.PI / 180;
+  const sin = Math.abs(Math.sin(rad));
+  const cos = Math.abs(Math.cos(rad));
+  
+  canvas.width = img.width * cos + img.height * sin;
+  canvas.height = img.width * sin + img.height * cos;
+  
+  ctx.translate(canvas.width / 2, canvas.height / 2);
+  ctx.rotate(rad);
+  ctx.drawImage(img, -img.width / 2, -img.height / 2);
+  
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "rotated-${angle}.png";
+    a.click();
+  }, "image/png");
+};
+
+img.src = "your-image.jpg";`;
+    },
+    faq: [
+      { q: "Why does the canvas size change?", a: "Rotation may increase dimensions to fit the rotated image without clipping." },
+      { q: "How do I rotate 90 degrees efficiently?", a: "For exact 90/180/270, use ctx.translate + ctx.rotate + ctx.drawImage with swapped dimensions." },
+    ],
+  },
+  {
+    slug: "image-flip",
+    outputLanguage: "html",
+    name: "Image Flipper",
+    description: "Flip images horizontally or vertically.",
+    category: "image",
+    icon: "FlipHorizontal",
+    accent: "red",
+    generator: true,
+    outputLabel: "Flip code",
+    actions: [{ id: "horizontal", label: "Horizontal" }, { id: "vertical", label: "Vertical" }],
+    run: (_input: string, action: string): string => {
+      if (action === "vertical") {
+        return `// Flip image vertically
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+
+img.onload = () => {
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.translate(0, canvas.height);
+  ctx.scale(1, -1);
+  ctx.drawImage(img, 0, 0);
+  
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "flipped-vertical.png";
+    a.click();
+  }, "image/png");
+};
+
+img.src = "your-image.jpg";`;
+      }
+      return `// Flip image horizontally
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+
+img.onload = () => {
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+  ctx.drawImage(img, 0, 0);
+  
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "flipped-horizontal.png";
+    a.click();
+  }, "image/png");
+};
+
+img.src = "your-image.jpg";`;
+    },
+    faq: [
+      { q: "How does flipping work?", a: "ctx.scale(-1, 1) flips horizontally. ctx.scale(1, -1) flips vertically." },
+      { q: "Can I combine flip and rotate?", a: "Yes, apply multiple ctx.rotate() and ctx.scale() transforms before drawImage." },
+    ],
+  },
+  {
+    slug: "image-convert",
+    outputLanguage: "html",
+    name: "Image Format Converter",
+    description: "Convert between PNG, JPG, WebP, and AVIF in the browser.",
+    category: "image",
+    icon: "RefreshCw",
+    accent: "red",
+    generator: true,
+    outputLabel: "Convert code",
+    actions: [
+      { id: "to-jpg", label: "→ JPG" },
+      { id: "to-png", label: "→ PNG" },
+      { id: "to-webp", label: "→ WebP" },
+      { id: "to-avif", label: "→ AVIF" },
+    ],
+    run: (_input: string, action: string): string => {
+      const formats: Record<string, { mime: string; ext: string; q: string }> = {
+        "to-jpg": { mime: "image/jpeg", ext: "jpg", q: "0.9" },
+        "to-png": { mime: "image/png", ext: "png", q: "1.0" },
+        "to-webp": { mime: "image/webp", ext: "webp", q: "0.85" },
+        "to-avif": { mime: "image/avif", ext: "avif", q: "0.8" },
+      };
+      const cfg = formats[action] || formats["to-jpg"];
+      return `// Convert image to ${cfg.ext.toUpperCase()}
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+
+img.onload = () => {
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img, 0, 0);
+  
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "converted.${cfg.ext}";
+    a.click();
+  }, "${cfg.mime}", ${cfg.q});
+};
+
+img.src = "your-image.jpg";
+
+// Supported formats:
+// - image/jpeg (JPG) - best for photos
+// - image/png (PNG) - best for transparency
+// - image/webp (WebP) - 25-35% smaller
+// - image/avif (AVIF) - 50% smaller, modern browsers`;
+    },
+    faq: [
+      { q: "Which format is smallest?", a: "AVIF is smallest, followed by WebP. Both are significantly smaller than JPEG/PNG." },
+      { q: "Does canvas.toBlob support all formats?", a: "WebP and AVIF support varies by browser. Check canUseWebP() or canUseAVIF() first." },
+    ],
+  },
+  {
+    slug: "svg-sprite-generator",
+    outputLanguage: "html",
+    name: "SVG Sprite Generator",
+    description: "Generate an SVG sprite sheet from multiple SVG icons.",
+    category: "image",
+    icon: "Layers",
+    accent: "red",
+    inputLabel: "SVG code",
+    outputLabel: "SVG Sprite",
+    placeholder: "Paste SVG code to include...",
+    sample: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg>',
+    actions: [{ id: "run", label: "Generate Sprite" }],
+    run: (input: string): string => {
+      const svgContent = input.trim() || '<rect width="24" height="24" fill="currentColor"/>';
+      return `<!-- SVG Sprite Sheet -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="icon-1" viewBox="0 0 24 24">
+    ${svgContent.replace(/<svg[^>]*>/, "").replace("</svg>", "")}
+  </symbol>
+</svg>
+
+<!-- Usage -->
+<svg width="24" height="24" aria-hidden="true">
+  <use href="#icon-1"></use>
+</svg>
+
+<!-- JavaScript to build sprite from multiple SVGs -->
+<script>
+const svgs = document.querySelectorAll('.icon-svg');
+let sprite = '<svg xmlns="http://www.w3.org/2000/svg" style="display:none">';
+svgs.forEach((svg, i) => {
+  const viewBox = svg.getAttribute('viewBox') || '0 0 24 24';
+  const inner = svg.innerHTML;
+  sprite += '<symbol id="icon-' + i + '" viewBox="' + viewBox + '">' + inner + '</symbol>';
+  svg.style.display = 'none';
+});
+sprite += '</svg>';
+document.body.insertAdjacentHTML('afterbegin', sprite);
+</script>`;
+    },
+    faq: [
+      { q: "Why use SVG sprites?", a: "Sprites reduce HTTP requests and allow CSS styling of icons via currentColor." },
+      { q: "How do I change icon color?", a: "Set color on the parent <svg> element; icons using currentColor will inherit it." },
+    ],
+  },
+  {
+    slug: "image-exif",
+    outputLanguage: "json",
+    name: "EXIF Metadata Viewer",
+    description: "Extract EXIF metadata from images in the browser.",
+    category: "image",
+    icon: "Info",
+    accent: "red",
+    generator: true,
+    outputLabel: "EXIF data",
+    actions: [{ id: "run", label: "View EXIF" }],
+    run: (): string => `// Extract EXIF metadata from an image
+async function readExif(file) {
+  const buffer = await file.arrayBuffer();
+  const view = new DataView(buffer);
+  
+  // Check for JPEG header
+  if (view.getUint16(0) !== 0xFFD8) {
+    return "Not a JPEG file";
+  }
+  
+  let offset = 2;
+  const exif = {};
+  
+  while (offset < buffer.byteLength) {
+    const marker = view.getUint16(offset);
+    const length = view.getUint16(offset + 2);
+    
+    if (marker === 0xFFE1) { // EXIF marker
+      const exifData = new Uint8Array(buffer, offset + 4, length - 2);
+      // Parse EXIF fields...
+      exif.raw = Array.from(exifData.slice(0, 20)).map(b => b.toString(16)).join(' ');
+    }
+    
+    offset += 2 + length;
+  }
+  
+  // For full EXIF parsing, use exif-js library:
+  // <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+  // EXIF.getData(imageElement, function() {
+  //   const data = EXIF.getAllTags(this);
+  //   console.log(data);
+  // });
+  
+  return exif;
+}
+
+// Usage with file input
+document.querySelector('input[type="file"]').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  const exif = await readExif(file);
+  console.log(exif);
+});`,
+    faq: [
+      { q: "What EXIF data is available?", a: "Camera model, date taken, GPS coordinates, ISO, shutter speed, aperture, and more." },
+      { q: "Does it work with PNG?", a: "PNG uses tEXt chunks, not EXIF. Use a PNG metadata library for PNG files." },
+    ],
+  },
+  {
+    slug: "image-blur",
+    outputLanguage: "html",
+    name: "Image Blur",
+    description: "Apply blur effects to images using CSS or canvas.",
+    category: "image",
+    icon: "EyeOff",
+    accent: "red",
+    generator: true,
+    outputLabel: "Blur code",
+    sample: "5",
+    actions: [{ id: "css", label: "CSS Blur" }, { id: "canvas", label: "Canvas Blur" }],
+    run: (input: string, action: string): string => {
+      const amount = parseInt(input) || 5;
+      if (action === "canvas") {
+        return `// Apply blur using canvas
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+const img = new Image();
+
+img.onload = () => {
+  canvas.width = img.width;
+  canvas.height = img.height;
+  
+  // Draw original
+  ctx.drawImage(img, 0, 0);
+  
+  // Apply blur using multiple passes
+  ctx.filter = "blur(${amount}px)";
+  ctx.drawImage(canvas, 0, 0);
+  
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "blurred-${amount}.png";
+    a.click();
+  }, "image/png");
+};
+
+img.src = "your-image.jpg";`;
+      }
+      return `/* CSS Blur - simple and performant */
+.blur-${amount}px {
+  filter: blur(${amount}px);
+}
+
+/* Gradient blur (sharp center, blurred edges) */
+.blur-vignette {
+  mask-image: radial-gradient(circle, black 40%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle, black 40%, transparent 100%);
+}
+
+/* Progressive blur (increases toward edges) */
+.blur-progressive {
+  filter: blur(${Math.floor(amount / 2)}px);
+  mask-image: linear-gradient(white, rgba(255,255,255,0.5));
+}`;
+    },
+    faq: [
+      { q: "CSS blur vs canvas blur?", a: "CSS blur is real-time and doesn't modify the image. Canvas blur is destructive and exports a new image." },
+      { q: "How do I blur only part of an image?", a: "Use CSS mask-image or canvas clipping to apply blur selectively." },
+    ],
+  },
+
 ];
 
 export const toolsBySlug = Object.fromEntries(tools.map((t) => [t.slug, t]));
