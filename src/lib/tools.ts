@@ -976,6 +976,8 @@ export type Tool = {
   generator?: boolean;
   inputLabel?: string;
   outputLabel?: string;
+  /** hint for syntax highlighting language */
+  outputLanguage?: string;
   placeholder?: string;
   sample?: string;
   actions: { id: string; label: string }[];
@@ -1085,6 +1087,7 @@ function rgbToHsl(r: number, g: number, b: number) {
 export const tools: Tool[] = [
   {
     slug: "json-formatter",
+    outputLanguage: "json",
     name: "JSON Formatter",
     description: "Pretty-print, validate and minify JSON with helpful error messages.",
     category: "json",
@@ -1129,6 +1132,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "json-to-typescript",
+    outputLanguage: "typescript",
     name: "JSON to TypeScript",
     description: "Turn any JSON payload into a typed TypeScript interface instantly.",
     category: "json",
@@ -1192,6 +1196,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "query-string-parser",
+    outputLanguage: "json",
     name: "Query String Parser",
     description: "Split any URL into readable, formatted query parameters.",
     category: "api",
@@ -1216,6 +1221,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "jwt-decoder",
+    outputLanguage: "json",
     name: "JWT Decoder",
     description: "Inspect the header and payload of a JSON Web Token locally.",
     category: "security",
@@ -1445,6 +1451,7 @@ export const tools: Tool[] = [
   },
   {
     slug: "css-minifier",
+    outputLanguage: "css",
     name: "CSS Minifier",
     description: "Shrink stylesheets by removing comments and dead whitespace.",
     category: "css",
@@ -1643,6 +1650,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-merge",
+      outputLanguage: "json",
       name: "JSON Merge",
       description: "Merge two JSON objects together with shallow or deep merge strategies.",
       category: "json",
@@ -1681,6 +1689,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-pretty-print",
+      outputLanguage: "json",
       name: "JSON Pretty Print",
       description: "Format and prettify minified or compressed JSON.",
       category: "json",
@@ -1736,6 +1745,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-sort-keys",
+      outputLanguage: "json",
       name: "JSON Sort Keys",
       description: "Recursively sort all keys in JSON objects alphabetically.",
       category: "json",
@@ -1793,6 +1803,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-repair",
+      outputLanguage: "json",
       name: "JSON Repair",
       description: "Attempt to fix common JSON syntax errors automatically.",
       category: "json",
@@ -1825,6 +1836,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-zod",
+      outputLanguage: "typescript",
       name: "JSON to Zod",
       description: "Generate Zod validation schema from JSON data.",
       category: "converter",
@@ -1853,6 +1865,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-yup",
+      outputLanguage: "typescript",
       name: "JSON to Yup",
       description: "Generate Yup validation schema from JSON data.",
       category: "converter",
@@ -1880,6 +1893,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-prisma",
+      outputLanguage: "graphql",
       name: "JSON to Prisma",
       description: "Generate a Prisma schema model from JSON data.",
       category: "converter",
@@ -1908,6 +1922,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-sql",
+      outputLanguage: "sql",
       name: "JSON to SQL",
       description: "Generate SQL CREATE TABLE and INSERT statements from JSON.",
       category: "converter",
@@ -1942,6 +1957,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-graphql",
+      outputLanguage: "graphql",
       name: "JSON to GraphQL",
       description: "Generate a GraphQL type definition from JSON data.",
       category: "converter",
@@ -1968,6 +1984,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-go",
+      outputLanguage: "go",
       name: "JSON to Go",
       description: "Generate a Go struct definition from JSON data.",
       category: "converter",
@@ -1995,6 +2012,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-rust",
+      outputLanguage: "rust",
       name: "JSON to Rust",
       description: "Generate a Rust struct with serde derives from JSON data.",
       category: "converter",
@@ -2021,6 +2039,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-java",
+      outputLanguage: "java",
       name: "JSON to Java",
       description: "Generate a Java class with getters, setters, and constructor from JSON.",
       category: "converter",
@@ -2047,6 +2066,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-kotlin",
+      outputLanguage: "kotlin",
       name: "JSON to Kotlin",
       description: "Generate a Kotlin data class from JSON data.",
       category: "converter",
@@ -2073,6 +2093,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-swift",
+      outputLanguage: "swift",
       name: "JSON to Swift",
       description: "Generate a Swift Codable struct from JSON data.",
       category: "converter",
@@ -2099,6 +2120,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-dart",
+      outputLanguage: "dart",
       name: "JSON to Dart",
       description: "Generate a Dart class with fromJson/toJson methods from JSON data.",
       category: "converter",
@@ -2125,6 +2147,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "csv-to-json",
+      outputLanguage: "json",
       name: "CSV to JSON",
       description: "Convert CSV data to a JSON array of objects.",
       category: "converter",
@@ -2151,6 +2174,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-csv",
+      outputLanguage: "plaintext",
       name: "JSON to CSV",
       description: "Convert a JSON array of objects to CSV format.",
       category: "converter",
@@ -2181,6 +2205,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "xml-to-json",
+      outputLanguage: "json",
       name: "XML to JSON",
       description: "Convert XML data to JSON format.",
       category: "converter",
@@ -2206,6 +2231,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-xml",
+      outputLanguage: "xml",
       name: "JSON to XML",
       description: "Convert JSON data to XML format.",
       category: "converter",
@@ -2231,6 +2257,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "yaml-to-json",
+      outputLanguage: "json",
       name: "YAML to JSON",
       description: "Convert YAML data to JSON format.",
       category: "converter",
@@ -2256,6 +2283,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-yaml",
+      outputLanguage: "yaml",
       name: "JSON to YAML",
       description: "Convert JSON data to YAML format.",
       category: "converter",
@@ -2281,6 +2309,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "toml-to-json",
+      outputLanguage: "json",
       name: "TOML to JSON",
       description: "Convert TOML data to JSON format.",
       category: "converter",
@@ -2306,6 +2335,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "json-to-toml",
+      outputLanguage: "yaml",
       name: "JSON to TOML",
       description: "Convert JSON data to TOML format.",
       category: "converter",
@@ -2333,6 +2363,7 @@ export const tools: Tool[] = [
   // ─── API & Database Tools (New) ────────────────────────
   {
       slug: "curl-to-fetch",
+      outputLanguage: "javascript",
       name: "cURL to Fetch",
       description: "Convert cURL commands to JavaScript fetch() code",
       category: "api",
@@ -2380,6 +2411,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "curl-to-axios",
+      outputLanguage: "javascript",
       name: "cURL to Axios",
       description: "Convert cURL commands to Axios HTTP calls",
       category: "api",
@@ -2432,6 +2464,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "curl-to-python",
+      outputLanguage: "python",
       name: "cURL to Python",
       description: "Convert cURL commands to Python requests code",
       category: "api",
@@ -2480,6 +2513,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "curl-to-go",
+      outputLanguage: "go",
       name: "cURL to Go",
       description: "Convert cURL commands to Go net/http code",
       category: "api",
@@ -2553,6 +2587,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "curl-to-php",
+      outputLanguage: "php",
       name: "cURL to PHP",
       description: "Convert cURL commands to PHP cURL code",
       category: "api",
@@ -2621,6 +2656,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "curl-to-java",
+      outputLanguage: "java",
       name: "cURL to Java",
       description: "Convert cURL commands to Java HttpClient code",
       category: "api",
@@ -2698,6 +2734,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "curl-to-nodejs",
+      outputLanguage: "javascript",
       name: "cURL to Node.js",
       description: "Convert cURL commands to Node.js fetch code",
       category: "api",
@@ -2746,6 +2783,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "postman-to-curl",
+      outputLanguage: "bash",
       name: "Postman to cURL",
       description: "Convert Postman collection JSON to cURL commands",
       category: "api",
@@ -2801,6 +2839,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "openapi-to-typescript-sdk",
+      outputLanguage: "typescript",
       name: "OpenAPI to TypeScript SDK",
       description: "Generate TypeScript SDK from OpenAPI specification",
       category: "api",
@@ -2914,6 +2953,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "openapi-to-axios",
+      outputLanguage: "typescript",
       name: "OpenAPI to Axios Client",
       description: "Generate Axios client from OpenAPI specification",
       category: "api",
@@ -2993,6 +3033,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "openapi-to-fetch",
+      outputLanguage: "typescript",
       name: "OpenAPI to Fetch Client",
       description: "Generate Fetch client from OpenAPI specification",
       category: "api",
@@ -3132,6 +3173,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "sql-formatter",
+      outputLanguage: "sql",
       name: "SQL Formatter",
       description: "Format and beautify SQL queries",
       category: "database",
@@ -3169,6 +3211,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "sql-minifier",
+      outputLanguage: "sql",
       name: "SQL Minifier",
       description: "Minify SQL queries by removing extra whitespace",
       category: "database",
@@ -3199,6 +3242,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "sql-beautifier",
+      outputLanguage: "sql",
       name: "SQL Beautifier",
       description: "Beautify SQL queries with proper indentation",
       category: "database",
@@ -3226,6 +3270,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "sql-to-prisma",
+      outputLanguage: "graphql",
       name: "SQL to Prisma Schema",
       description: "Convert SQL CREATE TABLE statements to Prisma schema",
       category: "database",
@@ -3315,6 +3360,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "prisma-to-sql",
+      outputLanguage: "sql",
       name: "Prisma Schema to SQL",
       description: "Convert Prisma schema to SQL CREATE TABLE statements",
       category: "database",
@@ -3396,6 +3442,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "sql-to-laravel-migration",
+      outputLanguage: "php",
       name: "SQL to Laravel Migration",
       description: "Convert SQL CREATE TABLE to Laravel migration",
       category: "database",
@@ -3499,6 +3546,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "sql-to-sequelize",
+      outputLanguage: "javascript",
       name: "SQL to Sequelize Model",
       description: "Convert SQL CREATE TABLE to Sequelize model definition",
       category: "database",
@@ -3591,6 +3639,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "sql-to-typeorm",
+      outputLanguage: "typescript",
       name: "SQL to TypeORM Entity",
       description: "Convert SQL CREATE TABLE to TypeORM entity class",
       category: "database",
@@ -3688,6 +3737,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "sql-to-drizzle",
+      outputLanguage: "typescript",
       name: "SQL to Drizzle Schema",
       description: "Convert SQL CREATE TABLE to Drizzle ORM schema",
       category: "database",
@@ -3774,6 +3824,7 @@ export const tools: Tool[] = [
   // ─── Frontend Tools (New) ────────────────────────
   {
       slug: "html-to-jsx",
+      outputLanguage: "javascript",
       name: "HTML → JSX",
       description: "Convert HTML to JSX syntax for React components",
       category: "css",
@@ -3858,6 +3909,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "html-to-tsx",
+      outputLanguage: "typescript",
       name: "HTML → TSX",
       description: "Convert HTML to TypeScript React (TSX) with type annotations",
       category: "css",
@@ -3931,6 +3983,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "svg-to-jsx",
+      outputLanguage: "javascript",
       name: "SVG → JSX",
       description: "Convert SVG markup to JSX-compatible syntax",
       category: "css",
@@ -3973,6 +4026,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "svg-to-react-component",
+      outputLanguage: "typescript",
       name: "SVG → React Component",
       description: "Convert SVG into a reusable React functional component",
       category: "css",
@@ -4635,6 +4689,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "css-beautifier",
+      outputLanguage: "css",
       name: "CSS Beautifier",
       description: "Format and beautify CSS code with proper indentation",
       category: "css",
@@ -4687,6 +4742,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "js-beautifier",
+      outputLanguage: "javascript",
       name: "JS Beautifier",
       description: "Format and beautify JavaScript code",
       category: "javascript",
@@ -4762,6 +4818,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "js-minifier",
+      outputLanguage: "javascript",
       name: "JS Minifier",
       description: "Minify JavaScript code by removing comments and whitespace",
       category: "javascript",
@@ -4805,6 +4862,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "ts-formatter",
+      outputLanguage: "typescript",
       name: "TS Formatter",
       description: "Format and beautify TypeScript code",
       category: "javascript",
@@ -5237,6 +5295,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "js-to-typescript",
+      outputLanguage: "typescript",
       name: "JS → TypeScript",
       description: "Convert JavaScript code to TypeScript with type inference",
       category: "javascript",
@@ -5942,6 +6001,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "svg-optimizer",
+      outputLanguage: "xml",
       name: "SVG Optimizer",
       description: "Optimize SVG files by removing unnecessary elements",
       category: "image",
@@ -5995,6 +6055,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "svg-minifier",
+      outputLanguage: "xml",
       name: "SVG Minifier",
       description: "Minify SVG code by removing whitespace and shortening attributes",
       category: "image",
@@ -6048,6 +6109,7 @@ export const tools: Tool[] = [
     },
   {
       slug: "svg-formatter",
+      outputLanguage: "xml",
       name: "SVG Formatter",
       description: "Format SVG code with proper indentation and line breaks",
       category: "image",
